@@ -1,3 +1,9 @@
-# ifj_projekt
+# Projekt do předmětu IFJ
 
-Překladač pro IFJ19
+**Členové**
+* Jan Klhůfek
+* Matěj Alexej Helc
+* Andrea Chimenti
+* Martin Šerý
+
+Zadání [zde](ifj2019.pdf)
