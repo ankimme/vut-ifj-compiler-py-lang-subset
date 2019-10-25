@@ -1,154 +1,110 @@
-#include <string.h>
-#include <stdlib.h>
- 
-#define INCREMENT_SIZE 100
+#include "symtable.h"
 
-typedef struct{
+static void st_init_table(St_table** t_init)
+{
+    *t_init = malloc(sizeof(St_table));
 
-	char* key;
-	char* value;
+    if (*t_init == NULL)
+    {
+        error_handle(99);
+        return;
+    }
 
-} St_entry;
+    (*t_init)->size = INCREMENT_SIZE;
+    (*t_init)->item_count = 0;
+    (*t_init)->entries = malloc(sizeof(St_entry) * INCREMENT_SIZE);
 
-typedef struct {
-
-	int size;
-	int item_count;
-	st_entry** entries;
-
-} St_table;
-
-typedef enum {
-
-	VARIABLE_OR_CONSTANT,
-	FUNCTION
-
-} Identificator_type;
-
-typedef enum {
-
-	INT,
-	DOUBLE,
-	STRING,
-	//BOOL, CHAR
-
-} Variable_type;
-
-typedef struct {
-
-	Identificator_type identificator_type;
-	Variable_type variable_type;
-	Data_values * data;
-
-} St_item;
-
-typedef union {
-
-	int int_value;
-	double double_value;
-	char* string_value;
-
-} Data_values;
-
-static void init_table(St_table** t_init) {
-
-	*t_init = malloc(sizeof(St_table);
-
-	if (*t_init == NULL) {
-
-		error_handle(99);
-		return;
-	}
-
-	*t_init->size = INCREMENT_SIZE;
-	*t_init->item_count = 0;
-	*t_init->entries = malloc(sizeof(St_entry) * INCREMENT_SIZE);
-
-	if (*t_init->entries == NULL) {
-		free(*t_init);
-		error_handle(99);
-		return;
-	}
-
+    if ((*t_init)->entries == NULL)
+    {
+        free(*t_init);
+        error_handle(99);
+        return;
+    }
 } 
 
-static void init_entry(St_entry** e_init, enum identificator_type) {
+static void st_init_entry(St_entry** e_init)
+{
+    *e_init = malloc(sizeof(St_entry));
+    (*e_init)->key = NULL;
+    (*e_init)->value = NULL;
 
-	*e_init = malloc(sizeof(St_entry); 
+    if (*e_init == NULL)
+    {
 
-	if (*e_init == NULL) {
-
-		error_handle(99);
-		return;
-	}
-
+        error_handle(99);
+        return;
+    }
 }
 
-static void delete_entry(St_entry** e_delete) {
-
-	free(*e_delete->key);
-	free(*e_delete->value); // TODO funkce na smazání obsahu value
-	free(*e_delete); 
-
+static void st_delete_entry(St_entry** e_delete)
+{
+    free((*e_delete)->key);
+    free((*e_delete)->value); // TODO funkce na smazani obsahu value
+    free(*e_delete); 
 }
 
-static void delete_table(St_table** t_delete) {
+static void st_delete_table(St_table** t_delete)
+{
+    for (int i = 0; i < (*t_delete)->size; i++)
+    {
+        St_entry* entry = (*t_delete)->entries[i];
+        if (entry != NULL)
+        {
+            st_delete_entry(entry);
+        }
+    }
 
-	for (int i = 0; i < *t_delete->size; i++) {
-	
-		St_entry* entry = *t_delete->entries[i];
-		if (entry != NULL) {
-		
-			delete_entry(entry);
-		
-		}
-	}
-
-	free(*t_delete->entries);
-	free(*t_delete);
-
+    free((*t_delete)->entries);
+    free(*t_delete);
 }
 
-static void insert_item(St_table* st_insert, char* key, char* value) {
-
-	St_entry* ins_entry = init_entry(key, value);
-	
-	int index = st_generate_hash(ins_entry->key, st_insert->size);
-	
-	St_entry* cur_entry = st_insert->items[index];
-	
-	int i = 1;
-
-	while (cur_entry != NULL) {
-		
-		index = st_generate_hash(ins_entry->key, st_insert->size);
-		cur_entry = st_insert->items[index];
-		i++;
-	}
-
-	st_insert->items[index] = ins_entry;
-	st_insert->count++;
+void st_insert_item(St_table* table, char* identificator, St_item* value)
+{
+    St_entry* ins_entry;
+    st_init_entry(&ins_entry);
+    ins_entry->key = st_generate_hash(identificator);
+    ins_entry->value = value;
+    
+    int index = st_search_item(table, identificator); // hleda jestli v tabulce jiz existuje zaznam se stejnym hash klicem
+    if (index == -1) // pokud nebyl nalezen prvek se stejnym klicem, pak pokracuje ve vkladani
+    {
+        if (table->size != table->item_count)
+        {
+            table->entries[table->item_count] = ins_entry;
+            table->item_count++;
+        }
+        else // v tabulce neni dostatek mista
+        {
+            // TODO realloc and then insert
+        }
+    }
+    else // pokud byl nalezen prvek se stejnym klicem, zaznam se prepise
+    {
+        table->entries[index] = ins_entry;
+    }
 }
 
-static int st_generate_hash(int key, char *s) {
-
-	long hash = 0;
-	int len_s = strlen(s);
-	
-	for (int i = 0; i < len_s; i++) { //TODO 
-	
-		hash += (long)s[i] * (len_s + key * (len_s - key * pow(2,key)));
-	
-	}
-
-	return hash;
-
+static int st_search_item(St_table* table, char* identificator)
+{
+    unsigned long hash = st_generate_hash(identificator);
+    for (int i = 0; i < table->size; i++)
+    {
+        if (table->entries[i]->key == hash)
+        {
+            return i;
+        }
+    }
+    return -1;
 }
 
-//TODO VYØEŠIT KOLIZE
+static unsigned long st_generate_hash(char *s)
+{
+    unsigned long hash;
 
-
-/*
-e_init->identificator_type = identificator_type;
-e_init->variable_type =
-*/
+    const int len_s = strlen(s);
+    for (int i = 0; i < len_s; i++)
+    {
+        hash += (long)pow(2, len_s - (i + 1)) * s[i];
+    }
+    return hash;
+}
