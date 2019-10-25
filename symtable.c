@@ -1,4 +1,4 @@
-#include "symtable.h"
+﻿#include "symtable.h"
 
 static void st_init_table(St_table** t_init)
 {

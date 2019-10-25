@@ -1,7 +1,33 @@
+﻿
+/**
+ *@file symtable.h
+ *@brief Tabulka s rozptýlenými prvky (Hash table)
+ *@author Martin Šery (e-mail: xserym01@stud.fit.vutbr.cz)
+ *@author Andrea Chimenti (e-mail: xchime00@stud.fit.vutbr.cz)
+ *@date 25.10.2018
+ *@version 1.0
+ *
+ *
+ *
+ *Implementace hash tabulky
+ *https://github.com/jamesroutley/write-a-hash-table/tree/master/02-hash-table
+ *
+ *
+ */	
+
+
 #include <string.h>
 #include <stdlib.h>
 
+
 #define INCREMENT_SIZE 100
+
+ /** 
+  *
+  *@struct St_entry
+  *@brief Definování záznamů
+  *	
+  */
 
 typedef struct{
 
@@ -9,6 +35,14 @@ typedef struct{
     St_item* value;
 
 } St_entry;
+
+
+/**
+ *
+ *@struct St_table
+ *@brief Definování tabulky
+ *
+ */
 
 typedef struct {
 
@@ -18,12 +52,27 @@ typedef struct {
 
 } St_table;
 
+
+/**
+ *
+ *@enum Identificator_type
+ *@brief Typy identifikátorů
+ *
+ */
+
 typedef enum {
 
     VARIABLE_OR_CONSTANT,
     FUNCTION
 
 } Identificator_type;
+
+/**
+ *
+ *@enum Variable_type
+ *@brief Typy proměnných
+ *
+ */
 
 typedef enum {
 
@@ -34,6 +83,13 @@ typedef enum {
 
 } Variable_type;
 
+/**
+ *
+ *@struct St_item
+ *@brief Definování položek
+ *
+ */
+
 typedef struct {
 
     Identificator_type identificator_type;
@@ -41,6 +97,11 @@ typedef struct {
     Data_value * data;
 
 } St_item;
+
+/**
+  * @union Data_value
+	@brief Hodnoty dat
+  */
 
 typedef union {
 
@@ -50,16 +111,78 @@ typedef union {
 
 } Data_value;
 
+
+
+/**
+ * Inicializace tabulky symbolů.
+ *
+ *
+ * @param t_init Ukazatel na tabulku.
+ */
+
+
 static void st_init_table(St_table** t_init);
+
+/**
+ * Inicializace záznamu v tabulce symbolů.
+ *
+ * @param e_init Ukazatel na položku v tabulce.
+ */
+
+
 
 static void st_init_entry(St_entry** e_init);
 
+
+
+/**
+ * Odstranění záznamu z tabulky symbolů.
+ *
+ * @param e_delete Ukazatel na položku v tabulce.
+ */
+
 static void st_delete_entry(St_entry** e_delete);
+
+
+/**
+ * Odstranění tabulky symbolů.
+ *
+ * @param t_delete Ukazatel na tabulku.
+ */
+
 
 static void st_delete_table(St_table** t_delete);
 
+/**
+* Vložení položky do tabulky symbolů.
+*
+* @param table Ukazatel na tabulku.
+* @param identificator Identifikátor
+* @param value Ukazatel na položku.
+*/
+
+
 void st_insert_item(St_table* table, char* identificator, St_item* value);
 
-static void st_search_item(St_table* table, char* identificator);
+/**
+ * Vyhledání položky v tabulce symbolů.
+ *
+ * @param table Ukazatel na tabulku.
+ * @param identificator Identifikátor
+ */
+
+
+static int st_search_item(St_table* table, char* identificator);
+
+
+
+/**
+ * Vygenerování hashe
+ *
+ * @param s je identifikator
+ * @return funkce vrací hash
+ *
+ */
 
 static unsigned long st_generate_hash(char *s);
+
