@@ -1,10 +1,24 @@
-﻿#include "symtable.h"
+﻿/*
+ * @file symtable.c
+ * @brief Implementace tabulky symbolů pomocí hashovací tabulky
+ * @author Andrea Chimenti (xchime00@stud.fit.vutbr.cz)
+ * @author Martin Šerý (xserym01@stud.fit.vutbr.cz)
+ * @date XX.XX.2019
+ *
+ * Projekt: Implementace překladače imperativního jazyka IFJ19 (varianta II)
+ * VUT FIT
+ * 
+ * Implementace inspirována z následujícího zdroje:
+ * https://github.com/jamesroutley/write-a-hash-table/tree/master/02-hash-table
+ */
+
+#include "symtable.h"
 
 static void st_init_table(St_table** t_init)
 {
     *t_init = malloc(sizeof(St_table));
 
-    if (*t_init == NULL)
+    if (t_init == NULL)
     {
         error_handle(99);
         return;
@@ -28,7 +42,7 @@ static void st_init_entry(St_entry** e_init)
     (*e_init)->key = NULL;
     (*e_init)->value = NULL;
 
-    if (*e_init == NULL)
+    if (e_init == NULL)
     {
 
         error_handle(99);

@@ -1,20 +1,19 @@
-﻿
-/**
- *@file symtable.h
- *@brief Tabulka s rozptýlenými prvky (Hash table)
- *@author Martin Šery (e-mail: xserym01@stud.fit.vutbr.cz)
- *@author Andrea Chimenti (e-mail: xchime00@stud.fit.vutbr.cz)
- *@date 25.10.2018
- *@version 1.0
+﻿/*
+ * @file symtable.h
+ * @brief Deklarace struktur pro tabulku symbolů
+ * @author Andrea Chimenti (xchime00@stud.fit.vutbr.cz)
+ * @author Martin Šerý (xserym01@stud.fit.vutbr.cz)
+ * @date XX.XX.2019
  *
- *
- *
- *Implementace hash tabulky
- *https://github.com/jamesroutley/write-a-hash-table/tree/master/02-hash-table
- *
- *
- */	
+ * Projekt: Implementace překladače imperativního jazyka IFJ19 (varianta II)
+ * VUT FIT
+ * 
+ * Implementace inspirována z následujícího zdroje:
+ * https://github.com/jamesroutley/write-a-hash-table/tree/master/02-hash-table
+ */
 
+#ifndef SYMTABLE_H
+#define SYMTABLE_H
 
 #include <string.h>
 #include <stdlib.h>
@@ -116,7 +115,6 @@ typedef union {
 /**
  * Inicializace tabulky symbolů.
  *
- *
  * @param t_init Ukazatel na tabulku.
  */
 
@@ -186,3 +184,4 @@ static int st_search_item(St_table* table, char* identificator);
 
 static unsigned long st_generate_hash(char *s);
 
+#endif
