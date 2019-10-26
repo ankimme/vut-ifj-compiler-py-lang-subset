@@ -1,9 +1,9 @@
-﻿/*
+/*
  * @file symtable.c
  * @brief Implementace tabulky symbolů pomocí hashovací tabulky
  * @author Andrea Chimenti (xchime00@stud.fit.vutbr.cz)
  * @author Martin Šerý (xserym01@stud.fit.vutbr.cz)
- * @date XX.XX.2019
+ * @date 26.10.2019
  *
  * Projekt: Implementace překladače imperativního jazyka IFJ19 (varianta II)
  * VUT FIT
