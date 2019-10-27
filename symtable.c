@@ -14,7 +14,7 @@
 
 #include "symtable.h"
 
-static void st_init_table(St_table** t_init)
+void st_init_table(St_table** t_init)
 {
     *t_init = malloc(sizeof(St_table));
 
@@ -36,35 +36,33 @@ static void st_init_table(St_table** t_init)
     }
 } 
 
-static void st_init_entry(St_entry** e_init)
+void st_init_entry(St_entry** e_init)
 {
     *e_init = malloc(sizeof(St_entry));
-    (*e_init)->key = NULL;
-    (*e_init)->value = NULL;
-
     if (e_init == NULL)
     {
-
         error_handle(99);
         return;
     }
+
+    (*e_init)->key = 0;
+    (*e_init)->value = NULL;
 }
 
-static void st_delete_entry(St_entry** e_delete)
+void st_delete_entry(St_entry** e_delete)
 {
-    free((*e_delete)->key);
     free((*e_delete)->value); // TODO funkce na smazani obsahu value
     free(*e_delete); 
 }
 
-static void st_delete_table(St_table** t_delete)
+void st_delete_table(St_table** t_delete)
 {
     for (int i = 0; i < (*t_delete)->size; i++)
     {
         St_entry* entry = (*t_delete)->entries[i];
         if (entry != NULL)
         {
-            st_delete_entry(entry);
+            st_delete_entry(&entry); // TODO zamyslet se jestli se opravdu predava dobry parametr
         }
     }
 
@@ -98,7 +96,7 @@ void st_insert_item(St_table* table, char* identificator, St_item* value)
     }
 }
 
-static int st_search_item(St_table* table, char* identificator)
+int st_search_item(St_table* table, char* identificator)
 {
     unsigned long hash = st_generate_hash(identificator);
     for (int i = 0; i < table->size; i++)
@@ -111,7 +109,7 @@ static int st_search_item(St_table* table, char* identificator)
     return -1;
 }
 
-static unsigned long st_generate_hash(char *s)
+unsigned long st_generate_hash(char *s)
 {
     unsigned long hash;
 
@@ -121,4 +119,15 @@ static unsigned long st_generate_hash(char *s)
         hash += (long)pow(2, len_s - (i + 1)) * s[i];
     }
     return hash;
+}
+
+void error_handle(int error_number)
+{
+    /* TODO error handling */
+    // st_delete_table(&table);
+    if (error_number) // DELETE
+    {
+
+    }
+    return;
 }
