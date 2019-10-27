@@ -59,7 +59,7 @@ int string_cmp(dynamic_string *dynamic_string, const char *string);
  * @param c Znak, ktorý chceme pridať.
  * @return 1 ak sa podarilo pridať znak, 0 ak nie.
  */
-int dynamic_string_add_char(dynamic_string *s, char c);
+int string_add_char(dynamic_string *s, char c);
 
 /**
  * Zreťazí reťazce.
