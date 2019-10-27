@@ -4,11 +4,11 @@
  * @author Jan Klhůfek (xklhuf01@stud.fit.vutbr.cz)
  * @date XX.XX.2019
  *
- * Projekt: Implementace prekladace imperativního jazyka IFJ19 (varianta II)
+ * Projekt: Implementace překladače imperativního jazyka IFJ19 (varianta II)
  * VUT FIT
  */
 
-//#include "error.h"
+
 #include "scanner.h"
 
 int new_line = 1;
@@ -29,6 +29,7 @@ void Get_next_token(St_token *Token)
         }
         if (counter > 0)
         {
+            printf("INDENT POZDĚJI\n");
             //generovat indent/dedent
             //zanoření/vynoření
         }
@@ -38,62 +39,64 @@ void Get_next_token(St_token *Token)
     Dynamic_string *string;
     if (!string_init(string))
     {
+        printf("CHYBIČKA STRING INIT\n");
         //vnitřní chyba alokace, error 99
     }
-    state = start;
+    State = start;
 
     while(c != EOF)
     {
-        switch(state)
+        switch(State)
         {
             case start:
                 if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c == '_')) //identifikátor
                 {
-                    state = INDENTIFIER;
+                    State = IDENTIFIER;
+                    strings_cat(string, &c);
                 }
                 else if (c >= '1' && c <= '9') //celé číslo
                 {
-                    state = INTEGER;
+                    State = INTEGER;
                 }
                 else if (c == '#') //komentář
                 {
-                    state = commentary;
+                    State = commentary;
                 }
                 else if (c == '!') //vykřičník
                 {
-                    state = exlamation_mark;
+                    State = exclamation_mark;
                 }
                 else if (c == '<' || c == '>' || c == '=') //relační operátor
                 {
-                    state = RELATION_OPERATION_1;
+                    State = RELATION_OPERATOR_1;
                 }
                 else if (c == '/') //lomítko
                 {
-                    state = BINARY_OPERATION_1;
+                    State = BINARY_OPERATOR_1;
                 }
                 else if (c == '+' || c == '-' || c == '*') //binární operátor
                 {
-                    state = BINARY_OPERATION_3;
+                    State = BINARY_OPERATOR_3;
                 }
                 else if (c == '"') //uvozovka
                 {
-                    state = quotation_mark_1;
+                    State = quotation_mark_1;
                 }
                 else if (c == '\'') //apostrof
                 {
-                    state = character;
+                    State = character;
                 }
                 else if (c == ' ' || c == '\t')
                 {
-                    state = start;
+                    State = start;
                 }
-
+                else
+                {
+                    printf("error\n");
+                    //error
+                }
+            //case ...
         }
-
-
-
-
-
     }
 
 
