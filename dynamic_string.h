@@ -21,12 +21,53 @@ typedef struct
     unsigned int alloc_size;
 } dynamic_string;
 
-int string_init(Dynamic_string *s); //inicializácia dynamického reťazca
+/**
+ * Vyprázdni reťazec.
+ *
+ * @param s Ukazeteľ na reťazec.
+ */
+void dynamic_string_clear(dynamic_string *s);
 
-void string_free(Dynamic_string *s); //uvoľnenie alokovanej pamäte
+/**
+ * Inicializácia dynamického reťazca.
+ *
+ * @param s Ukazateľ na reťazec.
+ * @return 1 ak sa inicializácia podarila, 0 ak nie.
+ */
+int string_init(dynamic_string *s);
 
-int string_cmp(Dynamic_string *dynamic_string, const char *string); //porovnanie reťazcov
+/**
+ * Uvoľňuje alokovanú pamäť pre dynamický reťazec.
+ *
+ * @param s Ukazateľ na reťazec.
+ */
+void string_free(dynamic_string *s);
 
-int string_cat(Dynamic_string *s, const char *string); //zreťazenie reťazcov
+/**
+ * Porovná reťazce.
+ *
+ * @param dynamic_string Dynamický reťazec.
+ * @param const_string Reťazec, konštanta.
+ * @return Vracia 1, 0 alebo -1 v závislosti či je dyn. reťazec väčší, rovný alebo menší ako druhý reťazec.
+ */
+int string_cmp(dynamic_string *dynamic_string, const char *string);
+
+/**
+ * Pridá znak na koniec dynamického reťazca.
+ *
+ * @param s Dynamický reťazec.
+ * @param c Znak, ktorý chceme pridať.
+ * @return 1 ak sa podarilo pridať znak, 0 ak nie.
+ */
+int dynamic_string_add_char(dynamic_string *s, char c);
+
+/**
+ * Zreťazí reťazce.
+ *
+ * @param s Dynamický reťazec.
+ * @param const_string Reťazec, konštanta.
+ * @return 1 ak sa zreťazenie podarilo, 0 ak nie.
+ */
+int string_cat(dynamic_string *s, const char *string);
 
 #endif
