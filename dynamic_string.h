@@ -50,7 +50,7 @@ void string_free(dynamic_string *s);
  * @param const_string Reťazec, konštanta.
  * @return Vracia 1, 0 alebo -1 v závislosti či je dyn. reťazec väčší, rovný alebo menší ako druhý reťazec.
  */
-int string_cmp(dynamic_string *dynamic_string, const char *string);
+int strings_cmp(dynamic_string *dynamic_string, const char *string);
 
 /**
  * Pridá znak na koniec dynamického reťazca.
@@ -68,6 +68,6 @@ int string_add_char(dynamic_string *s, char c);
  * @param const_string Reťazec, konštanta.
  * @return 1 ak sa zreťazenie podarilo, 0 ak nie.
  */
-int string_cat(dynamic_string *s, const char *string);
+int strings_cat(dynamic_string *s, const char *string);
 
 #endif
