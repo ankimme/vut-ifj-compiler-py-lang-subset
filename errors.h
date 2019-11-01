@@ -29,7 +29,7 @@ typedef enum
     OTHER_SEMANTIC_ERROR = 6, 
     DIVISION_BY_ZERO_ERROR = 9;
     INTERNAL_ERROR = 99,
-}Errors
+}Errors;
 
 
 #endif
