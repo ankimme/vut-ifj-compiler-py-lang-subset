@@ -19,7 +19,11 @@
 #include <stdlib.h>
 #include <math.h>
 
+// @def Velikost o kterou se zvetsuje tabulka symbolu v pripade ze dojde misto na polozky
 #define INCREMENT_SIZE 100
+// @def Maximalni pocet moznych context framu, v praxi kolik max krat lze volat funkci rekurzivne
+#define MAX_CONTEXT_FRAMES 1500
+
 
 /**
  *
@@ -72,7 +76,7 @@ typedef struct
 {
     Identificator_type identificator_type;
     Variable_type variable_type;
-    Data_value * data;
+    Data_value data;
 } St_item;
 
  /**
@@ -102,9 +106,38 @@ typedef struct
     St_entry** entries;
 } St_table;
 
+/**
+ * 
+ * TODO
+ */
+
+typedef struct
+{
+    int capacity;
+    int context_count;
+    St_table *context_frames[MAX_CONTEXT_FRAMES];
+} St_context_table;
 
 /**
- * Inicializace tabulky symbolů.
+ * Inicializace tabulky kontextů.
+ *
+ * @param context_table Ukazatel na tabulku kontextů.
+ * @post context_table.context_frames[0] obsahuje odkaz na hlavní tabulku symbolů.
+ */
+
+void st_init_context_table(St_context_table* context_table);
+
+/**
+ * Vloží do tabulky kontextů novou (prázdnout) tabulku symbolu (která reprezentuje nový kontext).
+ *
+ * @param context_table Ukazatel na tabulku kontextů.
+ * @post Poslední prvek context_table.context_frames je odkaz na nově vloženou tabulku symbolů.
+ */
+
+void st_create_context_frame(St_context_table* context_table);
+
+/**
+ * Inicializace prázdné tabulky symbolů.
  *
  * @param t_init Ukazatel na tabulku.
  */
@@ -136,23 +169,23 @@ void st_delete_entry(St_entry** e_delete);
 void st_delete_table(St_table** t_delete);
 
 /**
-* Vložení položky do tabulky symbolů.
+* Vložení položky do tabulky symbolů. TODO
 *
 * @param table Ukazatel na tabulku.
 * @param identificator Identifikátor
-* @param value Ukazatel na položku.
+* @param value Ukazatel na položku která bude vložena do tabulky TODO.
 */
 
-void st_insert_item(St_table* table, char* identificator, St_item* value);
+void st_insert_item_in_current_context(St_context_table* context_table, char* identificator, St_item* value);
 
 /**
- * Vyhledání položky v tabulce symbolů.
+ * Vyhledání položky v tabulce symbolů. TODO
  *
  * @param table Ukazatel na tabulku.
  * @param identificator Identifikátor
  */
 
-int st_search_item(St_table* table, char* identificator);
+St_item* st_search_item(St_context_table* context_table, char* identificator);
 
 /**
  * Vygenerování hashe
