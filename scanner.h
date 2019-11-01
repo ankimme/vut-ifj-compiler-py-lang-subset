@@ -15,6 +15,7 @@
 #include "errors.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 /**
  *
@@ -43,7 +44,7 @@ enum
 
     /*  ŘETĚZCOVÝ LITERÁL  */
     character, //mezistav, načítání znaků řetězce
-
+    
     escape, //mezistav, znak pro možnou escape sekvenci
 
     hexadecimal_1, //mezistavy, escape sekvence pro platné hexadecimální číslo
@@ -69,7 +70,7 @@ enum
     quotation_mark_1, //mezistavy, sekvence 3 po sobě jdoucích znaků uvozovek (""")
     quotation_mark_2,
     quotation_mark_3, //mezistav, slouží k načítání dalších znaků
-    slash, //mezistav, slouží k ošetření escape sekvence pro uvozovky (\")
+    backslash, //mezistav, slouží k ošetření escape sekvence pro uvozovky (\")
 
     ending_quotation_1, //mezistavy, posloupnost 3 ukončujících uvotovek (""")
     ending_quotation_2,

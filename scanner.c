@@ -8,9 +8,7 @@
  * VUT FIT
  */
 
-
 #include "scanner.h"
-
 
 int clean_all(Errors err, dynamic_string *str)
 {
@@ -31,6 +29,23 @@ int is_keyword(dynamic_string *str)
     }
 }
 
+/*
+void convert_to_integer(dynamic_string *str)
+{
+    char* end;
+    ...
+}
+
+
+void convert_to_double(dynamic_string *str, St_token *token)
+{
+
+    char *end_pointer;
+    double cislo = strtod(str, &end_pointer); //konverze číselné hodnoty z řetězce do proměnné typu double
+    
+    KONTROLA ROZSAHU?? ACHICH OUVEJ
+}
+*/
 
 void get_next_token(St_token *token)
 {
@@ -56,6 +71,7 @@ void get_next_token(St_token *token)
             //TODO generovat indent/dedent
             //zanoření/vynoření V PARSERU ASI
         }
+        new_line = 0;
     }
 
     //vytvoření stringu pro aktuální stav automatu
@@ -109,6 +125,7 @@ void get_next_token(St_token *token)
                         return;
                     }
                     token->error_value = clean_all(NO_ERROR, string);
+                    new_line = 1;
                     return;
                 }
                 else if (c == '!') //vykřičník
@@ -188,6 +205,7 @@ void get_next_token(St_token *token)
                 else
                 {
                     token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
                 }
 
                 break;
@@ -262,7 +280,7 @@ void get_next_token(St_token *token)
                 {
                     ungetc(c,stdin);
 
-                    if (!strings_cat(token->type, "INTEGER")) //identifikátor
+                    if (!strings_cat(token->type, "INTEGER")) //celé číslo
                     {
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
@@ -287,6 +305,7 @@ void get_next_token(St_token *token)
                 else
                 {
                     token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
                 }
 
                 break;
@@ -348,6 +367,7 @@ void get_next_token(St_token *token)
                 else
                 {
                     token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
                 }
 
                 break;
@@ -365,6 +385,7 @@ void get_next_token(St_token *token)
                 else
                 {
                     token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
                 }
 
                 break;
@@ -408,6 +429,7 @@ void get_next_token(St_token *token)
                         return;
                     }
                     token->error_value = clean_all(NO_ERROR, string);
+                    new_line = 1;
                     return; 
                 }
 
@@ -427,6 +449,7 @@ void get_next_token(St_token *token)
                 else
                 {
                     token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
                 }
 
                 break;
@@ -498,12 +521,193 @@ void get_next_token(St_token *token)
                 break;
 
             case BINARY_OPERATOR_1:
-            
+                if (c == '/') //BINARY_OPERATION_2 (//)
+                {
+                    if (!strings_cat(token->type, "DIVIDE_INTEGER"))
+                        {
+                            token->error_value = clean_all(INTERNAL_ERROR, string);
+                            return;
+                        }
+
+                    token->error_value = clean_all(NO_ERROR, string);
+                    return;
+                }
+                else //BINARY_OPERATION (/)
+                {
+                    ungetc(c,stdin);
+
+                    if (!strings_cat(token->type, "DIVIDE_FLOAT"))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+
+                    token->error_value = clean_all(NO_ERROR, string);
+                    return;
+                }
+
+                break;
+
+            case quotation_mark_1:
+                if (c == '"')
+                {
+                    State = quotation_mark_2;
+                }
+                else
+                {
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
+                }
+
+                break;
+
+            case quotation_mark_2:
+                if (c == '"')
+                {
+                    State = quotation_mark_3;
+                }
+                else
+                {
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
+                }
+
+                break;
+
+            case quotation_mark_3:
+                if (c == '"')
+                {
+                    State = ending_quotation_1;
+                }
+                else if (c == '\\')
+                {
+                    State = backslash;
+                }
+                else
+                {
+                    State = quotation_mark_3;
+                }
+
+                break;
+                
+            case ending_quotation_1:
+                if (c == '"')
+                {
+                    State = ending_quotation_2;
+                }
+                else if (c == '\\')
+                {
+                    State = backslash;
+                }
+                else
+                {
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
+                }
+
+                break;
+                //...
                 //TODO
+                //HMMMMMMM..... potřeba prodiskutovat, možné chybné navržení
+
+            case character:
+                if (c == '\\')
+                {
+                    if (!string_add_char(string, c))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    State = escape;
+                }
+                else if (c == '\'') //TODO zeptat se co s apostrofem?
+                {
+                    if (!string_add_char(string, c))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    if (!strings_cat(token->type, "STRING_LITERAL"))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    token->attribute.string = string;
+                    token->error_value = clean_all(NO_ERROR, string);
+                    return;
+                }
+                else
+                {
+                    if (!string_add_char(string, c))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    State = character;
+                }
+
+                break;
+
+            case escape:
+                if (c == 'x' || c == 'X')
+                {
+                    if (!string_add_char(string, c))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    State = hexadecimal_1;
+                }
+                else
+                {
+                    if (!string_add_char(string, c))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    State = character;
+                }
+
+                break;
+
+            case hexadecimal_1:
+                if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || (c >= '0' && c <= '9'))
+                {
+                    if (!string_add_char(string, c))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    State = hexadecimal_2;
+                }
+                else
+                {
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
+                }
+
+                break;
+
+            case hexadecimal_2:
+                if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || (c >= '0' && c <= '9'))
+                {
+                    if (!string_add_char(string, c))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    State = character;
+                }
+                else
+                {
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
+                }
+
+                break;
         }
     }
 
     //TODO
-    //Přidat dedenty a vynoření z tabulek symbolů
-    //Návratový kod
+    //Přidat tokeny dedentů
 }
