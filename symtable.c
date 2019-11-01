@@ -22,6 +22,11 @@ void st_init_context_table(St_context_table* context_table)
     context_table->context_frames[0] = main_sym_table;
     context_table->context_count = 1;
     context_table->capacity = MAX_CONTEXT_FRAMES;
+
+    for (int i = 1; i < context_table->capacity; i++) // nastaveni pointeru na NULL
+    {
+        context_table->context_frames[i] = NULL;
+    }
 }
 
 void st_create_context_frame(St_context_table* context_table)
@@ -40,7 +45,7 @@ void st_create_context_frame(St_context_table* context_table)
     }
 }
 
-void pop_context_frame(St_context_table* context_table)
+void st_pop_context_frame(St_context_table* context_table)
 {
     if (context_table->context_count > 1)
     {
@@ -68,9 +73,15 @@ void st_init_table(St_table** t_init)
     (*t_init)->item_count = 0;
     (*t_init)->entries = malloc(sizeof(St_entry) * INCREMENT_SIZE);
 
+    for(int i = 0; i < (*t_init)->size; i++) // nastaveni pointeru na NULL jako defaultni hodnota
+    {
+        (*t_init)->entries[i] = NULL;
+    }
+
     if ((*t_init)->entries == NULL)
     {
         free(*t_init);
+        *t_init = NULL;
         error_handle(99);
         return;
     }
@@ -91,8 +102,10 @@ void st_init_entry(St_entry** e_init)
 
 void st_delete_entry(St_entry** e_delete)
 {
-    free((*e_delete)->value); // TODO funkce na smazani obsahu value (polozky data uvnitr)
+    free((*e_delete)->value);
+    (*e_delete)->value = NULL;
     free(*e_delete); 
+    *e_delete = NULL;
 }
 
 void st_delete_table(St_table** t_delete)
@@ -107,7 +120,9 @@ void st_delete_table(St_table** t_delete)
     }
 
     free((*t_delete)->entries);
+    (*t_delete)->entries = NULL;
     free(*t_delete);
+    (*t_delete) = NULL;
 }
 
 void st_insert_item_in_current_context(St_context_table* context_table, char* identificator, St_item* value)
@@ -121,7 +136,7 @@ void st_insert_item_in_current_context(St_context_table* context_table, char* id
     ins_entry->key = st_generate_hash(identificator);
     ins_entry->value = value;
     
-    St_item* existing_item = st_search_item(context_table, identificator); // hleda jestli v tabulce jiz existuje zaznam se stejnym hash klicem
+    St_item* existing_item = st_search_item_in_current_context(context_table, identificator); // hleda jestli v tabulce jiz existuje zaznam se stejnym hash klicem
     if (existing_item == NULL) // pokud nebyl nalezen prvek se stejnym klicem, pak pokracuje ve vkladani
     {
         if (current_sym_table->size != current_sym_table->item_count)
@@ -141,7 +156,7 @@ void st_insert_item_in_current_context(St_context_table* context_table, char* id
     }
 }
 
-St_item* st_search_item(St_context_table* context_table, char* identificator)
+St_item* st_search_item_in_all_contexts(St_context_table* context_table, char* identificator)
 {
     unsigned long hash = st_generate_hash(identificator);
     St_table* table;
@@ -154,6 +169,20 @@ St_item* st_search_item(St_context_table* context_table, char* identificator)
             {
                 return table->entries[j]->value;
             }
+        }
+    }
+    return NULL;
+}
+
+St_item* st_search_item_in_current_context(St_context_table* context_table, char* identificator)
+{
+    unsigned long hash = st_generate_hash(identificator);
+    St_table* table = context_table->context_frames[context_table->context_count - 1];
+    for (int i = 0; i < table->item_count; i++)
+    {
+        if (table->entries[i]->key == hash)
+        {
+            return table->entries[i]->value;
         }
     }
     return NULL;
@@ -177,7 +206,27 @@ unsigned long st_generate_hash(char *s)
     return hash;
 }
 
-
+void st_free_all(St_context_table* context_table)
+{
+    St_table* table;
+    for (int i = context_table->context_count - 1; i >= 0; i--)
+    {
+        table = context_table->context_frames[i];
+        for (int j = 0; j < table->item_count; j++)
+        {
+            free(table->entries[j]->value);
+            table->entries[j]->value = NULL;
+            free(table->entries[j]);
+            table->entries[j] = NULL;
+        }
+        free(table->entries);
+        table->entries = NULL;
+        free(table);
+        table = NULL;
+    }
+    context_table->context_count = 0;
+    // free(context_table->context_frames);
+}
 
 void error_handle(int error_number)
 {

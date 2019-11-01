@@ -136,6 +136,9 @@ void st_init_context_table(St_context_table* context_table);
 
 void st_create_context_frame(St_context_table* context_table);
 
+// TODO documentace
+void st_pop_context_frame(St_context_table* context_table);
+
 /**
  * Inicializace prázdné tabulky symbolů.
  *
@@ -185,7 +188,16 @@ void st_insert_item_in_current_context(St_context_table* context_table, char* id
  * @param identificator Identifikátor
  */
 
-St_item* st_search_item(St_context_table* context_table, char* identificator);
+St_item* st_search_item_in_all_contexts(St_context_table* context_table, char* identificator);
+
+/**
+ * Vyhledání položky v tabulce symbolů. TODO
+ *
+ * @param table Ukazatel na tabulku.
+ * @param identificator Identifikátor
+ */
+
+St_item* st_search_item_in_current_context(St_context_table* context_table, char* identificator);
 
 /**
  * Vygenerování hashe
@@ -196,6 +208,10 @@ St_item* st_search_item(St_context_table* context_table, char* identificator);
  */
 
 unsigned long st_generate_hash(char *s);
+
+/** TODO dokuentace */
+
+void st_free_all(St_context_table* context_table);
 
 /** TODO dokuentace */
 
