@@ -2,7 +2,7 @@
  * @file scanner.h
  * @brief Hlavičkový soubor pro lexikální analyzátor
  * @author Jan Klhůfek (xklhuf01@stud.fit.vutbr.cz)
- * @date XX.XX.2019
+ * @date 1.11.2019
  *
  * Projekt: Implementace překladače imperativního jazyka IFJ19 (varianta II)
  * VUT FIT
@@ -12,9 +12,16 @@
 #define SCANNER_H
 
 #include "dynamic_string.h"
-//#include "error.h"
+#include "errors.h"
 
 #include <stdio.h>
+
+/**
+ *
+ * @enum State
+ * @brief Stavy DKA
+ *
+ */
 
 enum 
 {
@@ -70,34 +77,40 @@ enum
 }State;
 
 
-enum
-{
-    None,
-    DEF,
-    ELSE,
-    IF,
-    PASS,
-    RETURN,
-    WHILE,
-}Keyword;
-
+/**
+ *
+ * @union Token_value
+ * @brief Druhy atributu tokenu
+ *
+ */
 
 typedef union 
 {
-    dynamic_string *string; //Zkontrolvat
-    const dynamic_string *keyword; //Zkontrolvat
+    dynamic_string *string;
     int number;
     double decimal;
-
 }Token_value;
+
+/**
+ *
+ * @struct St_token
+ * @brief Definování tokenu
+ *
+ */
 
 typedef struct Token
 {
-    dynamic_string *type; //Zkontrolvat
+    dynamic_string *type; //Zkontrolovat
     Token_value attribute;
+    int error_value;
 }St_token;
+
+
 
 void get_next_token(St_token* Token);
 
+int clean_all(Errors err, dynamic_string *str);
+
+int is_keyword(dynamic_string *str);
 
 #endif
