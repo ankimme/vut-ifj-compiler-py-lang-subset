@@ -70,22 +70,34 @@ enum
 }State;
 
 
-typedef union
+enum
 {
-    Dynamic_string *string; //Zkontrolvat
-    Keyword keyword; //Zkontrolvat
+    None,
+    DEF,
+    ELSE,
+    IF,
+    PASS,
+    RETURN,
+    WHILE,
+}Keyword;
+
+
+typedef union 
+{
+    dynamic_string *string; //Zkontrolvat
+    const dynamic_string *keyword; //Zkontrolvat
     int number;
     double decimal;
 
 }Token_value;
 
-typedef struct
+typedef struct Token
 {
-    Dynamic_string *type; //Zkontrolvat
+    dynamic_string *type; //Zkontrolvat
     Token_value attribute;
 }St_token;
 
-void Get_next_token(St_token* Token);
+void get_next_token(St_token* Token);
 
 
 #endif

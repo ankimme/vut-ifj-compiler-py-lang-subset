@@ -11,10 +11,13 @@
 
 #include "scanner.h"
 
-int new_line = 1;
+//int error_handling()
 
-void Get_next_token(St_token *Token)
+
+void get_next_token(St_token *token)
 {
+    static int new_line = 1;
+
     char c = getchar();
 
     if (new_line == 1)
@@ -30,18 +33,25 @@ void Get_next_token(St_token *Token)
         if (counter > 0)
         {
             printf("INDENT POZDĚJI\n");
-            //generovat indent/dedent
-            //zanoření/vynoření
+            //TODO generovat indent/dedent
+            //zanoření/vynoření V PARSERU ASI
         }
     }
 
     //vytvoření stringu pro aktuální stav automatu
-    Dynamic_string *string;
+    dynamic_string str;
+    dynamic_string *string = &str;
     if (!string_init(string))
     {
         printf("CHYBIČKA STRING INIT\n");
-        //vnitřní chyba alokace, error 99
+        //TODO vnitřní chyba alokace, error 99
     }
+
+
+    /**************************/
+    /*        AUTOMAT         */
+    /**************************/
+    
     State = start;
 
     while(c != EOF)
@@ -52,31 +62,41 @@ void Get_next_token(St_token *Token)
                 if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c == '_')) //identifikátor
                 {
                     State = IDENTIFIER;
-                    strings_cat(string, &c);
+                    string_add_char(string, c);
                 }
                 else if (c >= '1' && c <= '9') //celé číslo
                 {
                     State = INTEGER;
+                    string_add_char(string, c);
                 }
                 else if (c == '#') //komentář
                 {
                     State = commentary;
                 }
+                else if (c == '\n') //EOL
+                {
+
+                    return;
+                }
                 else if (c == '!') //vykřičník
                 {
                     State = exclamation_mark;
+                    string_add_char(string, c);
                 }
                 else if (c == '<' || c == '>' || c == '=') //relační operátor
                 {
                     State = RELATION_OPERATOR_1;
+                    string_add_char(string, c);
                 }
                 else if (c == '/') //lomítko
                 {
                     State = BINARY_OPERATOR_1;
+                    string_add_char(string, c);
                 }
-                else if (c == '+' || c == '-' || c == '*') //binární operátor
+                else if (c == '+' || c == '-' || c == '*') //binární operátor //??
                 {
                     State = BINARY_OPERATOR_3;
+                    string_add_char(string, c);
                 }
                 else if (c == '"') //uvozovka
                 {
@@ -85,6 +105,7 @@ void Get_next_token(St_token *Token)
                 else if (c == '\'') //apostrof
                 {
                     State = character;
+                    string_add_char(string, c);
                 }
                 else if (c == ' ' || c == '\t')
                 {
@@ -93,9 +114,30 @@ void Get_next_token(St_token *Token)
                 else
                 {
                     printf("error\n");
-                    //error
+                    //TODO error
                 }
-            //case ...
+                break;
+
+            case IDENTIFIER:
+                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || (c == '_')) //identifikátor
+                {
+                    State = IDENTIFIER;
+                    string_add_char(string, c);
+                }
+                else
+                {
+                    //token->type = "KEYWORD";
+                    //token->attribute.keyword = string;
+
+                    //nebo
+                    token->type = IDENTIFIER;
+                    token->attribute.string = string;
+
+
+                    ungetc(c,stdin);
+                    return;
+                }
+                
         }
     }
 
