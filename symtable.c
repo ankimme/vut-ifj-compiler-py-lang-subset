@@ -40,6 +40,7 @@ void st_create_context_frame(St_context_table* context_table)
     }
     else
     {
+        // prekrocen maximalni pocet kontextu
         error_handle(99);
         return;
     }
@@ -72,12 +73,6 @@ void st_init_table(St_table** t_init)
     (*t_init)->size = INCREMENT_SIZE;
     (*t_init)->item_count = 0;
     (*t_init)->entries = malloc(sizeof(St_entry) * INCREMENT_SIZE);
-
-    for(int i = 0; i < (*t_init)->size; i++) // nastaveni pointeru na NULL jako defaultni hodnota
-    {
-        (*t_init)->entries[i] = NULL;
-    }
-
     if ((*t_init)->entries == NULL)
     {
         free(*t_init);
@@ -85,7 +80,30 @@ void st_init_table(St_table** t_init)
         error_handle(99);
         return;
     }
+
+    for(int i = 0; i < (*t_init)->size; i++) // nastaveni pointeru na NULL jako defaultni hodnota
+    {
+        (*t_init)->entries[i] = NULL;
+    }
+
 } 
+
+void st_delete_table(St_table** t_delete)
+{
+    for (int i = 0; i < (*t_delete)->size; i++)
+    {
+        St_entry* entry = (*t_delete)->entries[i];
+        if (entry != NULL)
+        {
+            st_delete_entry(&entry);
+        }
+    }
+
+    free((*t_delete)->entries);
+    (*t_delete)->entries = NULL;
+    free(*t_delete);
+    (*t_delete) = NULL;
+}
 
 void st_init_entry(St_entry** e_init)
 {
@@ -108,23 +126,6 @@ void st_delete_entry(St_entry** e_delete)
     *e_delete = NULL;
 }
 
-void st_delete_table(St_table** t_delete)
-{
-    for (int i = 0; i < (*t_delete)->size; i++)
-    {
-        St_entry* entry = (*t_delete)->entries[i];
-        if (entry != NULL)
-        {
-            st_delete_entry(&entry); // TODO zamyslet se jestli se opravdu predava dobry parametr
-        }
-    }
-
-    free((*t_delete)->entries);
-    (*t_delete)->entries = NULL;
-    free(*t_delete);
-    (*t_delete) = NULL;
-}
-
 void st_insert_item_in_current_context(St_context_table* context_table, char* identificator, St_item* value)
 {
     // nalezeni tabulky symbolu s aktualnim kontextem
@@ -139,15 +140,24 @@ void st_insert_item_in_current_context(St_context_table* context_table, char* id
     St_item* existing_item = st_search_item_in_current_context(context_table, identificator); // hleda jestli v tabulce jiz existuje zaznam se stejnym hash klicem
     if (existing_item == NULL) // pokud nebyl nalezen prvek se stejnym klicem, pak pokracuje ve vkladani
     {
-        if (current_sym_table->size != current_sym_table->item_count)
+        if (current_sym_table->size == current_sym_table->item_count) // v pripade ze v tabulce neni dostatek mista, pokusi se alokovat vice
         {
-            current_sym_table->entries[current_sym_table->item_count] = ins_entry;
-            current_sym_table->item_count++;
+            current_sym_table->entries = realloc(current_sym_table->entries, sizeof(St_entry) * current_sym_table->size + sizeof(St_entry) * INCREMENT_SIZE); // prideleni vetsi pameti poli entries
+            if (current_sym_table->entries == NULL)
+            {
+                error_handle(99);
+                return;
+            }
+
+            for(int i = current_sym_table->size; i < current_sym_table->size + INCREMENT_SIZE; i++) // nastaveni pointeru na NULL jako defaultni hodnota
+            {
+                current_sym_table->entries[i] = NULL;
+            }
+        
+            current_sym_table->size += INCREMENT_SIZE;
         }
-        else // v tabulce neni dostatek mista
-        {
-            // TODO realloc and then insert
-        }
+        current_sym_table->entries[current_sym_table->item_count] = ins_entry;
+        current_sym_table->item_count++;
     }
     else // pokud byl nalezen prvek se stejnym klicem, zaznam se prepise
     {
@@ -225,16 +235,12 @@ void st_free_all(St_context_table* context_table)
         table = NULL;
     }
     context_table->context_count = 0;
-    // free(context_table->context_frames);
 }
 
 void error_handle(int error_number)
 {
-    /* TODO error handling */
-    // st_delete_table(&table);
-    if (error_number) // DELETE
-    {
-
-    }
+    // TODO
+    // st_free_all(&context_table);
+    if (error_number) {};
     return;
 }

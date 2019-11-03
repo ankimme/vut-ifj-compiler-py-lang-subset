@@ -26,10 +26,8 @@
 
 
 /**
- *
  * @enum Identificator_type
- * @brief Typy identifikátorů
- *
+ * @brief Typy identifikátorů.
  */
 
 typedef enum
@@ -39,10 +37,8 @@ typedef enum
 } Identificator_type;
 
 /**
- *
  * @enum Variable_type
- * @brief Typy proměnných
- *
+ * @brief Typy proměnných.
  */
 
 typedef enum
@@ -50,12 +46,11 @@ typedef enum
     INT,
     DOUBLE,
     STRING,
-    //BOOL, CHAR TODO
 } Variable_type;
 
 /**
   * @union Data_value
-  * @brief Hodnoty dat
+  * @brief Hodnota dat v tabulce symbolů.
   */
 
 typedef union
@@ -66,10 +61,8 @@ typedef union
 } Data_value;
 
 /**
- *
  * @struct St_item
- * @brief Definování položek
- *
+ * @brief Položka v záznamu.
  */
 
 typedef struct
@@ -80,10 +73,8 @@ typedef struct
 } St_item;
 
  /**
-  *
   * @struct St_entry
-  * @brief Definování záznamů
-  *	
+  * @brief Záznam v tabulce některé z tabulek symbolů (v případě že je více kontextů).
   */
 
 typedef struct
@@ -93,10 +84,8 @@ typedef struct
 } St_entry;
 
 /**
- *
  * @struct St_table
- * @brief Definování tabulky
- *
+ * @brief Tabulka symbolů.
  */
 
 typedef struct
@@ -107,8 +96,8 @@ typedef struct
 } St_table;
 
 /**
- * 
- * TODO
+ * @struct St_context_table
+ * @brief Kontextová tabulka. Obsahuje ukazatele na tabulky symbolů. Plní se jako zásobník.
  */
 
 typedef struct
@@ -128,7 +117,7 @@ typedef struct
 void st_init_context_table(St_context_table* context_table);
 
 /**
- * Vloží do tabulky kontextů novou (prázdnout) tabulku symbolu (která reprezentuje nový kontext).
+ * Vloží do tabulky kontextů novou (prázdnou) tabulku symbolů, která reprezentuje nový kontext.
  *
  * @param context_table Ukazatel na tabulku kontextů.
  * @post Poslední prvek context_table.context_frames je odkaz na nově vloženou tabulku symbolů.
@@ -136,13 +125,20 @@ void st_init_context_table(St_context_table* context_table);
 
 void st_create_context_frame(St_context_table* context_table);
 
-// TODO documentace
+/**
+ * Odstraní z tabulky kontextů poslední vloženou tabulku symbolů. Data v ní uložená se odstraní. Simuluje odstranění lokálních proměnných funkce.
+ *
+ * @param context_table Ukazatel na tabulku kontextů.
+ * @post Poslední prvek context_table.context_frames je odstraněn, včetně jeho obsahu.
+ */
+
 void st_pop_context_frame(St_context_table* context_table);
 
 /**
  * Inicializace prázdné tabulky symbolů.
  *
- * @param t_init Ukazatel na tabulku.
+ * @param t_init Ukazatel na ukayatel na tabulku.
+ * @post Pole entries[] obsahuje ukazatele inicializované na hodnotu NULL.
  */
 
 void st_init_table(St_table** t_init);
@@ -150,21 +146,22 @@ void st_init_table(St_table** t_init);
 /**
  * Inicializace záznamu v tabulce symbolů.
  *
- * @param e_init Ukazatel na položku v tabulce.
+ * @param e_init Ukazatel na záznam.
+ * @post Key = 0, Value = NULL
  */
 
 void st_init_entry(St_entry** e_init);
 
 /**
- * Odstranění záznamu z tabulky symbolů.
+ * Uvolnění záznamu z paměti.
  *
- * @param e_delete Ukazatel na položku v tabulce.
+ * @param e_delete Ukazatel na záznam.
  */
 
 void st_delete_entry(St_entry** e_delete);
 
 /**
- * Odstranění tabulky symbolů.
+ * Uvolnění tabulky symbolů z paměti.
  *
  * @param t_delete Ukazatel na tabulku.
  */
@@ -172,48 +169,60 @@ void st_delete_entry(St_entry** e_delete);
 void st_delete_table(St_table** t_delete);
 
 /**
-* Vložení položky do tabulky symbolů. TODO
-*
-* @param table Ukazatel na tabulku.
-* @param identificator Identifikátor
-* @param value Ukazatel na položku která bude vložena do tabulky TODO.
-*/
+ * Vložení položky do nejaktuálnější tabulky symbolů. Tedy do nejnovějšího kontextu který vznikl.
+ *
+ * @param context_table Ukazatel na tabulku kontextů.
+ * @param identificator Identifikátor podle kterého bude vygenerován hash klíč.
+ * @param value Ukazatel na položku která bude vložena do tabulky.
+ * @post Záznam je uložen v tabulce symbolů pod hashem vygenerovaným z identifikátoru.
+ */
 
 void st_insert_item_in_current_context(St_context_table* context_table, char* identificator, St_item* value);
 
 /**
- * Vyhledání položky v tabulce symbolů. TODO
+ * Vyhledání položky ve všech tabulkách symbolů. Prohledají se všechny kontext.
  *
- * @param table Ukazatel na tabulku.
- * @param identificator Identifikátor
+ * @param context_table Ukazatel na tabulku kontextů.
+ * @param identificator Identifikátor pro vygenerování hash klíče.
+ * @return Ukazatel na nalezenou položku. NULL v případě že položka nebyla nalezena.
  */
 
 St_item* st_search_item_in_all_contexts(St_context_table* context_table, char* identificator);
 
 /**
- * Vyhledání položky v tabulce symbolů. TODO
+ * Vyhledání položky v aktuální tabulce symbolů. Prohledá se jen nejaktuálnější kontext.
  *
- * @param table Ukazatel na tabulku.
- * @param identificator Identifikátor
+ * @param context_table Ukazatel na tabulku kontextů.
+ * @param identificator Identifikátor pro vygenerování hash klíče.
+ * @return Ukazatel na nalezenou položku. NULL v případě že položka nebyla nalezena.
  */
 
 St_item* st_search_item_in_current_context(St_context_table* context_table, char* identificator);
 
 /**
- * Vygenerování hashe
+ * Vygenerování hash klíče z identifikátoru.
  *
- * @param s je identifikator
- * @return funkce vrací hash
+ * @param s Identifikator pro generovaní hash klíče.
+ * @return Hash klíč.
  *
  */
 
 unsigned long st_generate_hash(char *s);
 
-/** TODO dokuentace */
+/**
+ * Uvolnění všech symbolických tabulek a jejich obsahu z paměti.
+ *
+ * @param context_table Ukazatel na tabulku kontextů.
+ *
+ */
 
 void st_free_all(St_context_table* context_table);
 
-/** TODO dokuentace */
+/**
+ * Funkce zatím není navržena ani implementována.
+ * 
+ * @param error_number Číslo chyby.
+ */
 
 void error_handle(int error_number);
 
