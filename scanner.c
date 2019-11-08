@@ -2,7 +2,7 @@
  * @file scanner.c
  * @brief Implementace lexikálního analyzátoru
  * @author Jan Klhůfek (xklhuf01@stud.fit.vutbr.cz)
- * @date 1.11.2019
+ * @date 7.11.2019
  *
  * Projekt: Implementace překladače imperativního jazyka IFJ19 (varianta II)
  * VUT FIT
@@ -17,6 +17,7 @@ int clean_all(Errors err, dynamic_string *str)
     return err;
 }
 
+
 int is_keyword(dynamic_string *str)
 {
     if ((!strings_cmp(str, "None")) || (!strings_cmp(str, "def")) || (!strings_cmp(str, "else")) || (!strings_cmp(str, "if")) || (!strings_cmp(str, "pass")) || (!strings_cmp(str, "return")) || (!strings_cmp(str, "while")))
@@ -29,23 +30,45 @@ int is_keyword(dynamic_string *str)
     }
 }
 
-/*
-void convert_to_integer(dynamic_string *str)
+
+void convert_to_integer(dynamic_string *str, St_token *token)
 {
-    char* end;
-    ...
+    errno = 0;
+    char *end_pointer;
+
+    long integer_num = strtol(str->str, &end_pointer, 10); //konverze číselné hodnoty z řetězce do proměnné typu double
+
+    if ((integer_num > INT_MAX) || (*end_pointer != '\0'))
+    {
+        errno = ERANGE;
+        token->error_value = clean_all(INTERNAL_ERROR, str);
+        return;
+    }
+
+    token->attribute.number = integer_num;
+    token->error_value = clean_all(NO_ERROR, str);
+    return;
 }
 
 
 void convert_to_double(dynamic_string *str, St_token *token)
 {
-
+    errno = 0;
     char *end_pointer;
-    double cislo = strtod(str, &end_pointer); //konverze číselné hodnoty z řetězce do proměnné typu double
+
+    double decimal_num = strtod(str->str, &end_pointer); //konverze číselné hodnoty z řetězce do proměnné typu double
     
-    KONTROLA ROZSAHU?? ACHICH OUVEJ
+    if (errno == ERANGE)
+    {
+        token->error_value = clean_all(INTERNAL_ERROR, str);
+        return;
+    }
+
+    token->attribute.decimal = decimal_num;
+    token->error_value = clean_all(NO_ERROR, str);
+    return;
 }
-*/
+
 
 void get_next_token(St_token *token)
 {
@@ -53,13 +76,12 @@ void get_next_token(St_token *token)
 
     char c = getchar();
 
-
     //pokud se znak nachází na začátku řádku, možnost INDENTU
     if (new_line == 1)
     {
         int counter = 0;
 
-        while ((new_line == 1) && (c == ' '))
+        while (c == ' ')
         {
             counter++;
 
@@ -75,12 +97,12 @@ void get_next_token(St_token *token)
     }
 
     //vytvoření stringu pro aktuální stav automatu
-    //dynamic_string str;
+    
     dynamic_string *string = NULL;
     if (!string_init(string))
     {
-        printf("CHYBIČKA STRING INIT\n");
-        //TODO vnitřní chyba alokace, error 99
+        token->error_value = clean_all(INTERNAL_ERROR, string);
+        return;
     }
 
 
@@ -88,11 +110,11 @@ void get_next_token(St_token *token)
     /*        AUTOMAT         */
     /**************************/
     
-    State = start;
+    State state = start;
 
     while(c != EOF)
     {
-        switch(State)
+        switch(state)
         {
             case start:
                 if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c == '_')) //identifikátor
@@ -102,7 +124,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string); //předána hodnota o chybě v tokenu
                         return;
                     }
-                    State = IDENTIFIER;
+                    state = IDENTIFIER;
                 }
                 else if (c >= '1' && c <= '9') //celé číslo
                 {
@@ -111,11 +133,11 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = INTEGER;
+                    state = INTEGER;
                 }
                 else if (c == '#') //komentář
                 {
-                    State = commentary;
+                    state = commentary;
                 }
                 else if (c == '\n') //EOL
                 {
@@ -135,7 +157,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = exclamation_mark;
+                    state = exclamation_mark;
                 }
                 else if (c == '<' || c == '>' || c == '=') //relační operátor
                 {
@@ -144,7 +166,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = RELATION_OPERATOR_1;
+                    state = RELATION_OPERATOR;
                 }
                 else if (c == '/') //lomítko
                 {
@@ -153,7 +175,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = BINARY_OPERATOR_1;
+                    state = BINARY_OPERATOR;
                 }
                 else if (c == '+') //binární operátor +
                 {
@@ -187,7 +209,7 @@ void get_next_token(St_token *token)
                 }
                 else if (c == '"') //uvozovka
                 {
-                    State = quotation_mark_1;
+                    state = quotation_mark_1;
                 }
                 else if (c == '\'') //apostrof
                 {
@@ -196,11 +218,11 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = character;
+                    state = character;
                 }
                 else if (c == ' ' || c == '\t')
                 {
-                    State = start;
+                    state = start;
                 }
                 else
                 {
@@ -218,7 +240,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = IDENTIFIER;
+                    state = IDENTIFIER;
                 }
                 else
                 {
@@ -256,7 +278,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = INTEGER;
+                    state = INTEGER;
                 }
                 else if(c == '.') //desetinná tečka
                 {
@@ -265,7 +287,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = decimal_point;
+                    state = decimal_point;
                 }
                 else if(c == 'e' || c == 'E') //exponent
                 {
@@ -274,7 +296,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = exponent;
+                    state = exponent;
                 }
                 else
                 {
@@ -285,8 +307,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    token->attribute.number = string; //TODO překonvertovat na číslo, asi funkce
-                    token->error_value = clean_all(NO_ERROR, string);
+                    convert_to_integer(string, token); //převede celé nezáporné číslo ze stringu do integeru, v případě přetečení/podtečení nastaví INTERNAL_ERROR    
                     return;
                 }
 
@@ -300,7 +321,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = DOUBLE_1;
+                    state = DOUBLE_1;
                 }
                 else
                 {
@@ -318,7 +339,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = DOUBLE_1;
+                    state = DOUBLE_1;
                 }
                 else if (c == 'e' || c == 'E') //exponent
                 {
@@ -327,7 +348,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = exponent;
+                    state = exponent;
                 }
                 else
                 {
@@ -338,8 +359,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    token->attribute.decimal = string; //TODO překonvertovat na číslo, asi funkce
-                    token->error_value = clean_all(NO_ERROR, string);
+                    convert_to_double(string, token); //převede desetinný literál ze stringu do doublu, v případě přetečení/podtečení nastaví INTERNAL_ERROR
                     return;
                 }
 
@@ -353,7 +373,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = DOUBLE_2;
+                    state = DOUBLE_2;
                 }
                 else if (c == '+' || c == '-')
                 {
@@ -362,7 +382,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = plus_minus;
+                    state = plus_minus;
                 }
                 else
                 {
@@ -380,7 +400,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = DOUBLE_2;
+                    state = DOUBLE_2;
                 }
                 else
                 {
@@ -398,7 +418,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = DOUBLE_2;
+                    state = DOUBLE_2;
                 }
                 else
                 {
@@ -409,8 +429,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    token->attribute.decimal = string; //TODO překonvertovat na číslo, asi funkce
-                    token->error_value = clean_all(NO_ERROR, string);
+                    convert_to_double(string, token); //převede desetinný literál ze stringu do doublu, v případě přetečení/podtečení nastaví INTERNAL_ERROR
                     return;
                 }
 
@@ -419,7 +438,7 @@ void get_next_token(St_token *token)
             case commentary:
                 if (c != '\n')
                 {
-                    State = commentary;
+                    state = commentary;
                 }
                 else
                 {
@@ -454,7 +473,7 @@ void get_next_token(St_token *token)
 
                 break;
 
-            case RELATION_OPERATOR_1:
+            case RELATION_OPERATOR:
                 if (c == '=')
                 {
                     if (!strings_cmp(string, "<"))
@@ -520,7 +539,7 @@ void get_next_token(St_token *token)
                 
                 break;
 
-            case BINARY_OPERATOR_1:
+            case BINARY_OPERATOR:
                 if (c == '/') //BINARY_OPERATION_2 (//)
                 {
                     if (!strings_cat(token->type, "DIVIDE_INTEGER"))
@@ -551,7 +570,7 @@ void get_next_token(St_token *token)
             case quotation_mark_1:
                 if (c == '"')
                 {
-                    State = quotation_mark_2;
+                    state = quotation_mark_2;
                 }
                 else
                 {
@@ -564,7 +583,7 @@ void get_next_token(St_token *token)
             case quotation_mark_2:
                 if (c == '"')
                 {
-                    State = quotation_mark_3;
+                    state = quotation_mark_3;
                 }
                 else
                 {
@@ -577,15 +596,15 @@ void get_next_token(St_token *token)
             case quotation_mark_3:
                 if (c == '"')
                 {
-                    State = ending_quotation_1;
+                    state = ending_quotation_1;
                 }
                 else if (c == '\\')
                 {
-                    State = backslash;
+                    state = backslash;
                 }
                 else
                 {
-                    State = quotation_mark_3;
+                    state = quotation_mark_3;
                 }
 
                 break;
@@ -593,22 +612,42 @@ void get_next_token(St_token *token)
             case ending_quotation_1:
                 if (c == '"')
                 {
-                    State = ending_quotation_2;
+                    state = ending_quotation_2;
                 }
                 else if (c == '\\')
                 {
-                    State = backslash;
+                    state = backslash;
                 }
                 else
                 {
-                    token->error_value = clean_all(LEXICAL_ERROR, string);
-                    return;
+                    state = quotation_mark_3;
                 }
 
                 break;
-                //...
-                //TODO
-                //HMMMMMMM..... potřeba prodiskutovat, možné chybné navržení
+
+            case ending_quotation_2:
+                if (c == '"')
+                {
+                    state = start;
+                }
+                else if (c == '\\')
+                {
+                    state = backslash;
+                }
+                else
+                {
+                    state = quotation_mark_3;
+                }
+
+                break;
+
+            case backslash:
+                if (c)
+                {
+                    state = quotation_mark_3;
+                }
+
+                break;
 
             case character:
                 if (c == '\\')
@@ -618,16 +657,16 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = escape;
+                    state = escape;
                 }
-                else if (c == '\'') //TODO zeptat se co s apostrofem?
+                else if (c == '\'')
                 {
                     if (!string_add_char(string, c))
                     {
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    if (!strings_cat(token->type, "STRING_LITERAL"))
+                    if (!strings_cat(token->type, "STRING_LITERAL")) //token typu ŘETĚZCOVÝ LITERÁL
                     {
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
@@ -643,7 +682,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = character;
+                    state = character;
                 }
 
                 break;
@@ -656,7 +695,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = hexadecimal_1;
+                    state = hexadecimal_1;
                 }
                 else
                 {
@@ -665,7 +704,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = character;
+                    state = character;
                 }
 
                 break;
@@ -678,7 +717,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = hexadecimal_2;
+                    state = hexadecimal_2;
                 }
                 else
                 {
@@ -696,7 +735,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    State = character;
+                    state = character;
                 }
                 else
                 {
