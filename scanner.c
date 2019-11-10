@@ -101,7 +101,7 @@ void get_next_token(St_token *token, tStack* stack)
         {
             counter++;
 
-           c = getchar();
+            c = getchar();
         }
     
         if ((counter > 0) && (c == '\"')) //nemůže přijít dokumentační řetězec, chyba
@@ -118,6 +118,10 @@ void get_next_token(St_token *token, tStack* stack)
             if (c == '#') //komentář, indent se negeneruje
             {
                 ungetc(c,stdin);
+            }
+            else if (c == '\n') //EOL, indent se negeneruje
+            {
+                ungetc(c,stdin);   
             }
             else if ((c == EOF) && (indentation != 0)) //dogenerování dedentů
             {
