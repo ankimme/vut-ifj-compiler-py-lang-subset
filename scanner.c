@@ -146,14 +146,14 @@ void get_next_token(St_token *token, tStack* stack)
                 tStack_pop(stack);
                 tStack_top (stack, &indentation);
 
-                if (counter < indentation)
+                if (counter <= indentation) //generuj dedent
                 {
                     token->type = TOKEN_DEDENT;
                     token->error_value = clean_all(NO_ERROR, string);
 
                     return;
                 }
-                else if (counter > indentation)
+                else if (counter > indentation) //chyba
                 {
                     token->error_value = clean_all(LEXICAL_ERROR, string);
                     return;
@@ -169,6 +169,10 @@ void get_next_token(St_token *token, tStack* stack)
                 return;
             }
         }
+        else
+        {
+            ungetc(c,stdin);
+        }
     }
 
     
@@ -178,7 +182,6 @@ void get_next_token(St_token *token, tStack* stack)
     /*        AUTOMAT         */
     /**************************/
     
-    ungetc(c, stdin);
     State state = start;
 
     while(1)
