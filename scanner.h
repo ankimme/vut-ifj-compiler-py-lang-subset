@@ -13,6 +13,7 @@
 
 #include "dynamic_string.h"
 #include "errors.h"
+#include "stack.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -159,12 +160,13 @@ typedef struct Token
 /**
  * Zpracování vstupního lexému na odpovídající token. 
  *
- * @param token Token pro uchování informace o zpracovaném lexému.
+ * @param Token token pro uchování informace o zpracovaném lexému.
+ * @param Stack stack pro uchování informace o úrovních odsazení (počet mezer) 
  * @post Token je naplněn hodnotami pro další vyhodnocení a zpracování.
  *
  */
 
-void get_next_token(St_token* token);
+void get_next_token(St_token* token, tStack* stack);
 
 /**
  * Uvolnění naalokované paměti a předání návratové hodnoty lexikální analýzy.

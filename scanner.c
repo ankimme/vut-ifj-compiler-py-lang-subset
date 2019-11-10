@@ -22,7 +22,7 @@ int is_keyword(dynamic_string *string)
 {
     if ((!strcmp(string->str, "None")) || (!strcmp(string->str, "def")) || (!strcmp(string->str, "else")) || (!strcmp(string->str, "if")) || (!strcmp(string->str, "pass")) || (!strcmp(string->str, "return")) || (!strcmp(string->str, "while")))
     {
-       return 1;
+        return 1;
     }
     else
     {
@@ -113,7 +113,7 @@ void get_next_token(St_token *token, tStack* stack)
         if (counter >= 0) //generuj token INDENT či DEDENT
         {
             int indentation;
-            stackTop (stack, &indentation);
+            tStack_top (stack, &indentation);
 
             if (c == '#') //komentář, indent se negeneruje
             {
@@ -125,8 +125,8 @@ void get_next_token(St_token *token, tStack* stack)
 
                 ungetc(c,stdin);
         
-                stackPop(stack);
-                stackTop (stack, &indentation);
+                tStack_pop(stack);
+                tStack_top (stack, &indentation);
                 
                 token->type = TOKEN_DEDENT;
                 token->error_value = clean_all(NO_ERROR, string);
@@ -139,8 +139,8 @@ void get_next_token(St_token *token, tStack* stack)
 
                 ungetc(c,stdin);
         
-                stackPop(stack);
-                stackTop (stack, &indentation);
+                tStack_pop(stack);
+                tStack_top (stack, &indentation);
 
                 if (counter < indentation)
                 {
@@ -157,7 +157,7 @@ void get_next_token(St_token *token, tStack* stack)
             }
             else if (counter > indentation) //INDENT
             {
-                stackPush(stack, counter);
+                tStack_push(stack, counter);
 
                 token->type = TOKEN_INDENT;
                 token->error_value = clean_all(NO_ERROR, string);
