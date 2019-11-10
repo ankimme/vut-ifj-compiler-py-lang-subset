@@ -101,10 +101,10 @@ void get_next_token(St_token *token, tStack* stack)
         {
             counter++;
 
-            c = getchar();
+           c = getchar();
         }
     
-        else if ((counter > 0) && (c == '\"')) //nemůže přijít dokumentační řetězec, chyba
+        if ((counter > 0) && (c == '\"')) //nemůže přijít dokumentační řetězec, chyba
         {
             token->error_value = clean_all(LEXICAL_ERROR, string);
             return;
@@ -119,7 +119,7 @@ void get_next_token(St_token *token, tStack* stack)
             {
                 ungetc(c,stdin);
             }
-            else if (c == EOF) && (indentation != 0) //dogenerování dedentů
+            else if ((c == EOF) && (indentation != 0)) //dogenerování dedentů
             {
                 new_line = 1;
 
