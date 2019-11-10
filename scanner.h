@@ -79,6 +79,44 @@ typedef enum
 
 /**
  *
+ * @enum Token_type.
+ * @brief Typy tokenů.
+ * Jednotlivé typy tokenů z lexikální analýzy.
+ *
+ */
+
+typedef enum 
+{
+    TOKEN_EOL,
+
+    TOKEN_PLUS,
+    TOKEN_MINUS,
+    TOKEN_MULTIPLY,
+
+    TOKEN_KEYWORD,
+    TOKEN_IDENTIFIER,
+
+    TOKEN_INTEGER,
+    TOKEN_DOUBLE,
+
+    TOKEN_NOT_EQUAL,
+    TOKEN_EQUAL,
+
+    TOKEN_LESS_OR_EQUAL,
+    TOKEN_GREATER_OR_EQUAL,
+
+    TOKEN_LESS_THAN,
+    TOKEN_GREATER_THAN,
+    TOKEN_ASSIGNMENT,
+
+    TOKEN_DIVIDE_INTEGER,
+    TOKEN_DIVIDE_FLOAT,
+
+    TOKEN_STRING_LITERAL,
+}Token_type;
+
+/**
+ *
  * @union Token_value.
  * @brief Druhy atributu tokenu.
  *
@@ -100,7 +138,7 @@ typedef union
 
 typedef struct Token
 {
-    dynamic_string *type;
+    Token_type type;
     Token_value attribute;
     int error_value;
 }St_token;
@@ -134,7 +172,7 @@ int clean_all(Errors err, dynamic_string *str);
  *
  */
 
-int is_keyword(dynamic_string *str);
+int is_keyword(dynamic_string *string);
 
 /**
  * Převod řetězce na celočíselný literál.

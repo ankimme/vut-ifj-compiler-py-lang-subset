@@ -18,9 +18,9 @@ int clean_all(Errors err, dynamic_string *str)
 }
 
 
-int is_keyword(dynamic_string *str)
+int is_keyword(dynamic_string *string)
 {
-    if ((!strings_cmp(str, "None")) || (!strings_cmp(str, "def")) || (!strings_cmp(str, "else")) || (!strings_cmp(str, "if")) || (!strings_cmp(str, "pass")) || (!strings_cmp(str, "return")) || (!strings_cmp(str, "while")))
+    if ((!strcmp(string->str, "None")) || (!strcmp(string->str, "def")) || (!strcmp(string->str, "else")) || (!strcmp(string->str, "if")) || (!strcmp(string->str, "pass")) || (!strcmp(string->str, "return")) || (!strcmp(string->str, "while")))
     {
        return 1;
     }
@@ -76,7 +76,7 @@ void get_next_token(St_token *token)
 
     char c = getchar();
 
-    //pokud se znak nachází na začátku řádku, možnost INDENTU
+    //pokud se znak nachází na začátku řádku, možnost INDENTU, v případě komentáře se negeneruje!
     if (new_line == 1)
     {
         int counter = 0;
@@ -141,11 +141,7 @@ void get_next_token(St_token *token)
                 }
                 else if (c == '\n') //EOL
                 {
-                    if (!strings_cat(token->type, "EOL")) //v případě chyby v alokaci
-                    {
-                        token->error_value = clean_all(INTERNAL_ERROR, string); //předána hodnota o chybě v tokenu
-                        return;
-                    }
+                    token->type = TOKEN_EOL;
                     token->error_value = clean_all(NO_ERROR, string);
                     new_line = 1;
                     return;
@@ -179,31 +175,19 @@ void get_next_token(St_token *token)
                 }
                 else if (c == '+') //binární operátor +
                 {
-                    if (!strings_cat(token->type, "PLUS"))
-                    {
-                        token->error_value = clean_all(INTERNAL_ERROR, string);
-                        return;
-                    }
+                    token->type = TOKEN_PLUS;
                     token->error_value = clean_all(NO_ERROR, string);
                     return;
                 }
                 else if (c == '-') //binární operátor -
                 {
-                    if (!strings_cat(token->type, "MINUS"))
-                    {
-                        token->error_value = clean_all(INTERNAL_ERROR, string);
-                        return;
-                    }
+                    token->type = TOKEN_MINUS;
                     token->error_value = clean_all(NO_ERROR, string);
                     return;
                 }
                 else if (c == '*') //binární operátor *
                 {
-                    if (!strings_cat(token->type, "MULTIPLY"))
-                    {
-                        token->error_value = clean_all(INTERNAL_ERROR, string);
-                        return;
-                    }
+                    token->type = TOKEN_MULTIPLY;
                     token->error_value = clean_all(NO_ERROR, string);
                     return;
                 }
@@ -248,19 +232,11 @@ void get_next_token(St_token *token)
 
                     if(is_keyword(string))
                     {
-                        if (!strings_cat(token->type, "KEYWORD")) //klíčové slovo
-                        {
-                            token->error_value = clean_all(INTERNAL_ERROR, string);
-                            return;
-                        }
+                        token->type = TOKEN_KEYWORD; //klíčové slovo
                     }
                     else
                     {
-                        if (!strings_cat(token->type, "IDENTIFIER")) //identifikátor
-                        {
-                            token->error_value = clean_all(INTERNAL_ERROR, string);
-                            return;
-                        }
+                        token->type = TOKEN_IDENTIFIER; //identifikátor
                     }
                     token->attribute.string = string;
                     token->error_value = clean_all(NO_ERROR, string);
@@ -302,11 +278,8 @@ void get_next_token(St_token *token)
                 {
                     ungetc(c,stdin);
 
-                    if (!strings_cat(token->type, "INTEGER")) //celé číslo
-                    {
-                        token->error_value = clean_all(INTERNAL_ERROR, string);
-                        return;
-                    }
+                    token->type = TOKEN_INTEGER; //celé číslo
+                    
                     convert_to_integer(string, token); //převede celé nezáporné číslo ze stringu do integeru, v případě přetečení/podtečení nastaví INTERNAL_ERROR    
                     return;
                 }
@@ -354,11 +327,8 @@ void get_next_token(St_token *token)
                 {
                     ungetc(c,stdin);
 
-                    if (!strings_cat(token->type, "DOUBLE")) //desetinný literál
-                    {
-                        token->error_value = clean_all(INTERNAL_ERROR, string);
-                        return;
-                    }
+                    token->type = TOKEN_DOUBLE; //desetinný literál
+                    
                     convert_to_double(string, token); //převede desetinný literál ze stringu do doublu, v případě přetečení/podtečení nastaví INTERNAL_ERROR
                     return;
                 }
@@ -424,11 +394,8 @@ void get_next_token(St_token *token)
                 {
                     ungetc(c,stdin);
 
-                    if (!strings_cat(token->type, "DOUBLE")) //desetinný literál
-                    {
-                        token->error_value = clean_all(INTERNAL_ERROR, string);
-                        return;
-                    }
+                    token->type = TOKEN_DOUBLE; //desetinný literál
+                    
                     convert_to_double(string, token); //převede desetinný literál ze stringu do doublu, v případě přetečení/podtečení nastaví INTERNAL_ERROR
                     return;
                 }
@@ -442,11 +409,8 @@ void get_next_token(St_token *token)
                 }
                 else
                 {
-                    if (!strings_cat(token->type, "EOL")) //v případě chyby v alokaci
-                    {
-                        token->error_value = clean_all(INTERNAL_ERROR, string); //předána hodnota o chybě v tokenu
-                        return;
-                    }
+                    token->type = TOKEN_EOL;
+                    
                     token->error_value = clean_all(NO_ERROR, string);
                     new_line = 1;
                     return; 
@@ -457,11 +421,8 @@ void get_next_token(St_token *token)
             case exclamation_mark:
                 if (c == '=')
                 {
-                    if (!strings_cat(token->type, "NOT_EQUAL"))
-                    {
-                        token->error_value = clean_all(INTERNAL_ERROR, string);
-                        return;
-                    }
+                    token->type = TOKEN_NOT_EQUAL;
+                  
                     token->error_value = clean_all(NO_ERROR, string);
                     return;
                 }
@@ -476,29 +437,17 @@ void get_next_token(St_token *token)
             case RELATION_OPERATOR:
                 if (c == '=')
                 {
-                    if (!strings_cmp(string, "<"))
+                    if (!strcmp(string->str, "<"))
                     {
-                        if (!strings_cat(token->type, "LESS_OR_EQUAL"))
-                        {
-                            token->error_value = clean_all(INTERNAL_ERROR, string);
-                            return;
-                        }
+                        token->type = TOKEN_LESS_OR_EQUAL;
                     }
-                    else if (!strings_cmp(string, ">"))
+                    else if (!strcmp(string->str, ">"))
                     {
-                        if (!strings_cat(token->type, "GREATER_OR_EQUAL"))
-                        {
-                            token->error_value = clean_all(INTERNAL_ERROR, string);
-                            return;
-                        }
+                        token->type = TOKEN_GREATER_OR_EQUAL;
                     }
                     else // jedná se o rovnítko
                     {
-                        if (!strings_cat(token->type, "EQUAL"))
-                        {
-                            token->error_value = clean_all(INTERNAL_ERROR, string);
-                            return;
-                        }
+                        token->type = TOKEN_EQUAL;
                     }
                     
                     token->error_value = clean_all(NO_ERROR, string);
@@ -508,29 +457,17 @@ void get_next_token(St_token *token)
                 {
                     ungetc(c,stdin);
 
-                    if (!strings_cmp(string, "<"))
+                    if (!strcmp(string->str, "<"))
                     {
-                        if (!strings_cat(token->type, "LESS_THAN"))
-                        {
-                            token->error_value = clean_all(INTERNAL_ERROR, string);
-                            return;
-                        }
+                        token->type = TOKEN_LESS_THAN;
                     }
-                    else if (!strings_cmp(string, ">"))
+                    else if (!strcmp(string->str, ">"))
                     {
-                        if (!strings_cat(token->type, "GREATER_THAN"))
-                        {
-                            token->error_value = clean_all(INTERNAL_ERROR, string);
-                            return;
-                        }
+                        token->type = TOKEN_GREATER_THAN;
                     }
                     else // jedná se o rovnítko
                     {
-                        if (!strings_cat(token->type, "ASSIGNMENT"))
-                        {
-                            token->error_value = clean_all(INTERNAL_ERROR, string);
-                            return;
-                        }
+                        token->type = TOKEN_ASSIGNMENT;
                     }
 
                     token->error_value = clean_all(NO_ERROR, string);
@@ -542,11 +479,7 @@ void get_next_token(St_token *token)
             case BINARY_OPERATOR:
                 if (c == '/') //BINARY_OPERATION_2 (//)
                 {
-                    if (!strings_cat(token->type, "DIVIDE_INTEGER"))
-                        {
-                            token->error_value = clean_all(INTERNAL_ERROR, string);
-                            return;
-                        }
+                    token->type = TOKEN_DIVIDE_INTEGER;
 
                     token->error_value = clean_all(NO_ERROR, string);
                     return;
@@ -555,11 +488,8 @@ void get_next_token(St_token *token)
                 {
                     ungetc(c,stdin);
 
-                    if (!strings_cat(token->type, "DIVIDE_FLOAT"))
-                    {
-                        token->error_value = clean_all(INTERNAL_ERROR, string);
-                        return;
-                    }
+                    token->type = TOKEN_DIVIDE_FLOAT;
+                    
 
                     token->error_value = clean_all(NO_ERROR, string);
                     return;
@@ -666,11 +596,7 @@ void get_next_token(St_token *token)
                         token->error_value = clean_all(INTERNAL_ERROR, string);
                         return;
                     }
-                    if (!strings_cat(token->type, "STRING_LITERAL")) //token typu ŘETĚZCOVÝ LITERÁL
-                    {
-                        token->error_value = clean_all(INTERNAL_ERROR, string);
-                        return;
-                    }
+                    token->type = TOKEN_STRING_LITERAL; //token typu ŘETĚZCOVÝ LITERÁL
                     token->attribute.string = string;
                     token->error_value = clean_all(NO_ERROR, string);
                     return;
