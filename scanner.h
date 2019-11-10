@@ -35,7 +35,10 @@ typedef enum
     IDENTIFIER, //koncový stav, typ identifikátor
 
     /*  CELÉ ČÍSLO  */
-    INTEGER, //koncový stav, typ celé číslo
+    INTEGER, //koncový stav, typ celé číslo (nenulové)
+    ZERO, //koncový stav, typ celé číslo (nula)
+
+    excess, //mezistav, slouží k načítání přebytečných nul (v případě, že značí zápis v jiné číselné soustavě, chyba)
 
     /*  DESETINNÝ LITERÁL  */
     decimal_point, //mezistav, desetinná čárka
@@ -52,7 +55,6 @@ typedef enum
 
     hexadecimal_1, //mezistavy, escape sekvence pro platné hexadecimální číslo
     hexadecimal_2, 
-
 
     /*  KOMENTÁŘ  */
     commentary, //mezistav, komentář
@@ -74,6 +76,7 @@ typedef enum
 
     ending_quotation_1, //mezistavy, posloupnost 3 ukončujících uvotovek (""")
     ending_quotation_2,
+    doc_string, //mezistav, načtený víceřádkový dokumentační řetězec, očekává se EOL
 }State;
 
 
@@ -87,7 +90,17 @@ typedef enum
 
 typedef enum 
 {
+    TOKEN_INDENT,
+    TOKEN_DEDENT,
+
     TOKEN_EOL,
+    TOKEN_EOF,
+
+    TOKEN_COMMA,
+    TOKEN_COLON,
+
+    TOKEN_LEFT_BRACKET,
+    TOKEN_RIGHT_BRACKET,
 
     TOKEN_PLUS,
     TOKEN_MINUS,
