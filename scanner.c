@@ -184,26 +184,8 @@ void get_next_token(St_token *token, tStack* stack)
                 return;
             }
         }
-        
     }
-    else if ((c == EOF) && (new_line == 0)) //dogenerování dedentů
-    {
-        int indentation;
-        tStack_top (stack, &indentation);
-        if (indentation != 0)
-        {
-            new_line = 1;
-
-            ungetc(c,stdin);
-
-            tStack_pop(stack);
-            tStack_top (stack, &indentation);
-            
-            token->type = TOKEN_DEDENT;
-            token->error_value = clean_all(NO_ERROR, string);
-            return;
-        }
-    }
+    
     ungetc(c,stdin);
 
     
@@ -330,9 +312,25 @@ void get_next_token(St_token *token, tStack* stack)
                 }
                 else if (c == EOF) //EOF
                 {
+                    int indentation;
+                    tStack_top (stack, &indentation);
+                    if (indentation != 0) //dogenerování dedentů
+                    {
+                        new_line = 1;
+
+                        ungetc(c,stdin);
+
+                        tStack_pop(stack);
+                        tStack_top (stack, &indentation);
+                        
+                        token->type = TOKEN_DEDENT;
+                        token->error_value = clean_all(NO_ERROR, string);
+                        return;
+                    }
+                    
                     token->type = TOKEN_EOF;
                     token->error_value = clean_all(NO_ERROR, string);
-                    return;
+                    return;    
                 }
                 else if (c == '(') //levá závorka
                 {
@@ -449,13 +447,8 @@ void get_next_token(St_token *token, tStack* stack)
                 break;
 
             case ZERO:
-                if (c == '0') //více nul
+                if (c == '0') //přebytečné nuly ignorovány
                 {
-                    if (!string_add_char(string, c))
-                    {
-                        token->error_value = clean_all(INTERNAL_ERROR, string);
-                        return;
-                    }
                     state = ZERO;
                 }
                 else if (c == '.') //desetinná tečka
@@ -467,14 +460,10 @@ void get_next_token(St_token *token, tStack* stack)
                     }
                     state = decimal_point;
                 }
-                else if (c >= '1' && c <= '9') //číslo
+                else if (c >= '1' && c <= '9') //přebytečné nuly před číslem, chyba
                 {
-                    if (!string_add_char(string, c))
-                    {
-                        token->error_value = clean_all(INTERNAL_ERROR, string);
-                        return;
-                    }
-                    state = excess;
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
                 }
                 else //jedna nula
                 {
@@ -639,16 +628,38 @@ void get_next_token(St_token *token, tStack* stack)
                 break;
 
             case commentary:
-                if (c != '\n')
+                if ((c != '\n') && (c != EOF))
                 {
                     state = commentary;
                 }
-                else
+                else if (c == '\n')
                 {
                     new_line = 1;
                     token->type = TOKEN_EOL;  //EOL         
                     token->error_value = clean_all(NO_ERROR, string);
                     return; 
+                }
+                else
+                {    
+                    int indentation;
+                    tStack_top (stack, &indentation);
+                    if (indentation != 0) //dogenerování dedentů
+                    {
+                        new_line = 1;
+
+                        ungetc(c,stdin);
+
+                        tStack_pop(stack);
+                        tStack_top (stack, &indentation);
+                        
+                        token->type = TOKEN_DEDENT;
+                        token->error_value = clean_all(NO_ERROR, string);
+                        return;
+                    }
+                
+                    token->type = TOKEN_EOF;  //EOF         
+                    token->error_value = clean_all(NO_ERROR, string);
+                    return;     
                 }
 
                 break;
@@ -763,7 +774,12 @@ void get_next_token(St_token *token, tStack* stack)
                 {
                     state = backslash;
                 }
-                else
+                else if (c == EOF)
+                {
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
+                }
+                else    
                 {
                     state = quotation_mark_3;
                 }
@@ -778,6 +794,11 @@ void get_next_token(St_token *token, tStack* stack)
                 else if (c == '\\')
                 {
                     state = backslash;
+                }
+                else if (c == EOF)
+                {
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
                 }
                 else
                 {
@@ -795,6 +816,11 @@ void get_next_token(St_token *token, tStack* stack)
                 {
                     state = backslash;
                 }
+                else if (c == EOF)
+                {
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
+                }
                 else
                 {
                     state = quotation_mark_3;
@@ -803,9 +829,14 @@ void get_next_token(St_token *token, tStack* stack)
                 break;
 
             case backslash:
-                if (c)
+                if (c != EOF)
                 {
                     state = quotation_mark_3;
+                }
+                else
+                {
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
                 }
 
                 break;
@@ -856,6 +887,11 @@ void get_next_token(St_token *token, tStack* stack)
                     }
 
                     token->error_value = clean_all(NO_ERROR, string);
+                    return;
+                }
+                else if (c == EOF)
+                {
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
                     return;
                 }
                 else
