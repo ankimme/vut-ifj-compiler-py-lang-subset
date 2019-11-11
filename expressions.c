@@ -7,3 +7,16 @@
  * Projekt: Implementace překladače imperativního jazyka IFJ19 (varianta II)
  * VUT FIT
  */
+
+#include "expressions.h"
+
+void process_expression()
+{
+    //init stack
+    //push $ on top
+
+    //search terminal
+    printf("nič :(\n");
+
+}
+
