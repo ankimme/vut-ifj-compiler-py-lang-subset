@@ -33,7 +33,7 @@ int is_keyword(dynamic_string *string)
     }
 }
 
-
+/*
 void convert_to_integer(dynamic_string *str, St_token *token)
 {
     errno = 0;
@@ -48,7 +48,8 @@ void convert_to_integer(dynamic_string *str, St_token *token)
         return;
     }
 
-    token->attribute.number = integer_num;
+   
+    token->attribute = string;
     token->error_value = clean_all(NO_ERROR, str);
     return;
 }
@@ -71,7 +72,7 @@ void convert_to_double(dynamic_string *str, St_token *token)
     token->error_value = clean_all(NO_ERROR, str);
     return;
 }
-
+*/
 
 void get_next_token(St_token *token, tStack* stack)
 {
@@ -360,9 +361,14 @@ void get_next_token(St_token *token, tStack* stack)
                     {
                         token->type = TOKEN_IDENTIFIER; //identifikátor
                     }
-                    token->attribute.string = string;
-                    token->error_value = clean_all(NO_ERROR, string); //TODO
-                    // token->error_value = NO_ERROR;
+
+                    if (!string_append(token->attribute, string->str))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    
+                    token->error_value = clean_all(NO_ERROR, string);
                     return;
                 }
 
@@ -402,7 +408,13 @@ void get_next_token(St_token *token, tStack* stack)
 
                     token->type = TOKEN_INTEGER; //celé číslo
                     
-                    convert_to_integer(string, token); //převede celé nezáporné číslo ze stringu do integeru, v případě přetečení/podtečení nastaví INTERNAL_ERROR    
+                    if (!string_append(token->attribute, string->str))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    token->error_value = clean_all(NO_ERROR, string);
+
                     return;
                 }
 
@@ -440,8 +452,13 @@ void get_next_token(St_token *token, tStack* stack)
                 {
                     ungetc(c,stdin);
 
-                    token->type = TOKEN_INTEGER; //integer
-                    convert_to_integer(string, token); //převede celé nezáporné číslo ze stringu do integeru, v případě přetečení/podtečení nastaví INTERNAL_ERROR    
+                    token->type = TOKEN_INTEGER; //celé číslo
+                    if (!string_append(token->attribute, string->str))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    token->error_value = clean_all(NO_ERROR, string);
                     return;
                 }
 
@@ -508,7 +525,13 @@ void get_next_token(St_token *token, tStack* stack)
 
                     token->type = TOKEN_DOUBLE; //desetinný literál
                     
-                    convert_to_double(string, token); //převede desetinný literál ze stringu do doublu, v případě přetečení/podtečení nastaví INTERNAL_ERROR
+                    if (!string_append(token->attribute, string->str))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    token->error_value = clean_all(NO_ERROR, string);
+
                     return;
                 }
 
@@ -575,7 +598,13 @@ void get_next_token(St_token *token, tStack* stack)
 
                     token->type = TOKEN_DOUBLE; //desetinný literál
                     
-                    convert_to_double(string, token); //převede desetinný literál ze stringu do doublu, v případě přetečení/podtečení nastaví INTERNAL_ERROR
+                    if (!string_append(token->attribute, string->str))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    token->error_value = clean_all(NO_ERROR, string);
+
                     return;
                 }
 
@@ -791,7 +820,13 @@ void get_next_token(St_token *token, tStack* stack)
                         return;
                     }
                     token->type = TOKEN_STRING_LITERAL; //token typu ŘETĚZCOVÝ LITERÁL
-                    token->attribute.string = string;
+
+                    if (!string_append(token->attribute, string->str))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+
                     token->error_value = clean_all(NO_ERROR, string);
                     return;
                 }
@@ -866,7 +901,4 @@ void get_next_token(St_token *token, tStack* stack)
                 break;
         }
     }
-
-    //TODO
-    //Přidat tokeny dedentů
 }

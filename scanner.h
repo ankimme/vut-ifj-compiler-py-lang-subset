@@ -131,19 +131,6 @@ typedef enum
     UNDEFINED, // 25
 }Token_type;
 
-/**
- *
- * @union Token_value.
- * @brief Druhy atributu tokenu.
- *
- */
-
-typedef union 
-{
-    dynamic_string *string;
-    int number;
-    double decimal;
-}Token_value;
 
 /**
  *
@@ -155,7 +142,7 @@ typedef union
 typedef struct Token
 {
     Token_type type;
-    Token_value attribute;
+    dynamic_string *attribute;
     int error_value;
 }St_token;
 
@@ -191,6 +178,8 @@ int clean_all(Errors err, dynamic_string *str);
 
 int is_keyword(dynamic_string *string);
 
+
+
 /**
  * Převod řetězce na celočíselný literál.
  *
@@ -200,7 +189,7 @@ int is_keyword(dynamic_string *string);
  *
  */
 
-void convert_to_integer(dynamic_string *str, St_token *token);
+//void convert_to_integer(dynamic_string *str, St_token *token);
 
 /**
  * Převod řetězce na desetinný literál.
@@ -211,6 +200,6 @@ void convert_to_integer(dynamic_string *str, St_token *token);
  *
  */
 
-void convert_to_double(dynamic_string *str, St_token *token);
+//void convert_to_double(dynamic_string *str, St_token *token);
 
 #endif
