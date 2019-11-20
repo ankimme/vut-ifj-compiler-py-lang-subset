@@ -35,11 +35,6 @@ void string_free(dynamic_string *s)
 	free(s->str);
 }
 
-int strings_cmp(dynamic_string *dynamic_string, const char *string)
-{
-	return strcmp(dynamic_string->str, const_string);
-}
-
 int string_add_char(dynamic_string *s, char c)
 {
 	if (s->length + 1 >= s->alloc_size)
