@@ -44,15 +44,6 @@ int string_init(dynamic_string *s);
 void string_free(dynamic_string *s);
 
 /**
- * Porovná reťazce.
- *
- * @param dynamic_string Dynamický reťazec.
- * @param const_string Reťazec, konštanta.
- * @return Vracia 1, 0 alebo -1 v závislosti či je dyn. reťazec väčší, rovný alebo menší ako druhý reťazec.
- */
-int strings_cmp(dynamic_string *dynamic_string, const char *string);
-
-/**
  * Pridá znak na koniec dynamického reťazca.
  *
  * @param s Dynamický reťazec.
