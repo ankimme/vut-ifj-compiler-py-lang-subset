@@ -35,6 +35,11 @@ void string_free(dynamic_string *s)
 	free(s->str);
 }
 
+char string_rev(dynamic_string *dynamic_string)
+{
+    return strrev(dynamic_string->str);
+}
+
 int string_add_char(dynamic_string *s, char c)
 {
 	if (s->length + 1 >= s->alloc_size)
