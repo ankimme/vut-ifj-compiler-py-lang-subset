@@ -44,6 +44,14 @@ int string_init(dynamic_string *s);
 void string_free(dynamic_string *s);
 
 /**
+ * Obráti reťazec.
+ *
+ * @param dynamic_string Dynamický reťazec.
+ * @return Vracia obrátený reťazec.
+ */
+int string_rev(dynamic_string *dynamic_string);
+
+/**
  * Pridá znak na koniec dynamického reťazca.
  *
  * @param s Dynamický reťazec.
