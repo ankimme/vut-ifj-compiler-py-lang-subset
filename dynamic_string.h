@@ -49,7 +49,7 @@ void string_free(dynamic_string *s);
  * @param dynamic_string Dynamický reťazec.
  * @return Vracia obrátený reťazec.
  */
-int string_rev(dynamic_string *dynamic_string);
+char string_rev(dynamic_string *dynamic_string);
 
 /**
  * Pridá znak na koniec dynamického reťazca.
