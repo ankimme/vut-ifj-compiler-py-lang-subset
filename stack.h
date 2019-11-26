@@ -1,22 +1,58 @@
-#ifndef _STACK_H_
-#define _STACK_H_
+/*
+ * @file stack.h
+ * @brief Implementace pomocného zásobníku
+ * @author Matej Alexej Helc (xhelcm00@stud.fit.vutbr.cz)
+ * @author Andrea Chimenti (xchime00@stud.fit.vutbr.cz)
+ * @date 26.11.2019
+ *
+ * Projekt: Implementace překladače imperativního jazyka IFJ19 (varianta II)
+ * VUT FIT
+ * 
+ */
+
+#ifndef STACK_H
+#define STACK_H
 
 #include <stdio.h>
 
-#define MAX_STACK 20
+#define STACK_SIZE 50
 
 typedef struct 
 {
-	int arr[MAX_STACK];                            
+	int arr[STACK_SIZE];                            
 	int top;                                
 } tStack;
 
-void stackInit ( tStack* s );
-int stackEmpty ( const tStack* s );
-int stackFull ( const tStack* s );
-void stackTop ( const tStack* s, int* c );
-void stackPop ( tStack* s );
-void stackPush ( tStack* s, int c );
+/* ZASOBNIK CELYCH CISEL */
+
+/*
+ * MISSING DOCUMENTATION!
+ */
+void tStack_init ( tStack* s );
+
+/*
+ * MISSING DOCUMENTATION!
+ */
+int tStack_empty ( const tStack* s );
+
+/*
+ * MISSING DOCUMENTATION!
+ */
+int tStack_full ( const tStack* s );
+
+/*
+ * MISSING DOCUMENTATION!
+ */
+void tStack_pop ( tStack* s );
+
+/*
+ * MISSING DOCUMENTATION!
+ */
+void tStack_top ( const tStack* s, int* i );
+
+/*
+ * MISSING DOCUMENTATION!
+ */
+void tStack_push ( tStack* s, int i );
 
 #endif
-

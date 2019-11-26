@@ -1,54 +1,64 @@
+/*
+ * @file stack.c
+ * @brief Implementace pomocného zásobníku
+ * @author Matej Alexej Helc (xhelcm00@stud.fit.vutbr.cz)
+ * @author Andrea Chimenti (xchime00@stud.fit.vutbr.cz)
+ * @date 26.11.2019
+ *
+ * Projekt: Implementace překladače imperativního jazyka IFJ19 (varianta II)
+ * VUT FIT
+ * 
+ */
+
 #include "stack.h"
 
-int solved;
-int STACK_SIZE = MAX_STACK;
+/* ZASOBNIK CELYCH CISEL */
 
-void stackInit ( tStack* s ) {
-
-   if (s == NULL){
-       stackError(SERR_INIT);
-       return;
-   }
-
-   s->top = -1;
-
-}
-
-int stackEmpty ( const tStack* s ) {
-
-    return s->top == -1;
-}
-
-int stackFull ( const tStack* s ) {
-
-    return s->top == STACK_SIZE - 1;   
-}
-
-void stackTop ( const tStack* s, int* i ) {
-
-    if (stackEmpty(s)){
+void tStack_init( tStack* s )
+{
+    if (s == NULL)
+    {
         return;
     }
 
-    *i = s->arr[s->top];
+    s->top = -1;
 }
 
+int tStack_empty ( const tStack* s )
+{
+    return s->top == -1;
+}
 
-void stackPop ( tStack* s ) {
+int tStack_full ( const tStack* s )
+{
+    return s->top == STACK_SIZE - 1;   
+}
 
-    if (!stackEmpty(s)){
+void tStack_pop ( tStack* s )
+{
+    if (!tStack_empty(s))
+    {
         s->top--;
+    }
 }
 
+void tStack_top ( const tStack* s, int* c )
+{
+    if (tStack_empty(s))
+    {
+        return;
+    }
 
-void stackPush ( tStack* s, int i ) {
+    *c = s->arr[s->top];
+}
 
-
-    if (stackFull(s)){
+void tStack_push ( tStack* s, int c )
+{
+    if (tStack_full(s))
+    {
         return;
     }
 
     s->top++;  
-    s->arr[s->top] = i;
-
+    s->arr[s->top] = c;
 }
