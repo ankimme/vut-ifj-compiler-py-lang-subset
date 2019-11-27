@@ -1,229 +1,157 @@
 /*
- * @file symtable.h
- * @brief Deklarace struktur pro tabulku symbolů
+ * @file symtable.c
+ * @brief Implementace tabulky symbolů pomocí hashovací tabulky
  * @author Andrea Chimenti (xchime00@stud.fit.vutbr.cz)
  * @author Martin Šerý (xserym01@stud.fit.vutbr.cz)
- * @date 26.10.2019
+ * @date 18.11.2019
  *
  * Projekt: Implementace překladače imperativního jazyka IFJ19 (varianta II)
  * VUT FIT
  * 
- * Implementace inspirována z následujícího zdroje:
- * https://github.com/jamesroutley/write-a-hash-table/tree/master/02-hash-table
  */
 
 #ifndef SYMTABLE_H
 #define SYMTABLE_H
 
-#include <string.h>
 #include <stdlib.h>
-#include <math.h>
+#include <string.h>
+#include <stdio.h>
 
-// @def Velikost o kterou se zvetsuje tabulka symbolu v pripade ze dojde misto na polozky
-#define INCREMENT_SIZE 100
-// @def Maximalni pocet moznych context framu, v praxi kolik max krat lze volat funkci rekurzivne
-#define MAX_CONTEXT_FRAMES 1500
+// @def Velikost hash tabulky
+#define HT_SIZE 1171
+// @def Velikost zasobniku hash tabulek
+#define HT_STACK_SIZE 500
 
+/* klíč záznamu v tabulce symbolů */
+typedef char* tKey;
 
-/**
- * @enum Identificator_type
- * @brief Typy identifikátorů.
- */
+// typedef struct DELETE
+// {
+// 	int a;
+// } tData_Function;
 
-typedef enum
+// typedef struct DELETE
+// {
+// 	double a;
+// } tData_Variable;
+
+/* typ obsahu (například cena zboží) */
+typedef struct tData
 {
-    VARIABLE_OR_CONSTANT,
-    FUNCTION
-} Identificator_type;
+	int number;
+} tData;
 
-/**
- * @enum Variable_type
- * @brief Typy proměnných.
- */
+/*Datová položka HT s explicitně řetězenými synonymy*/
+ typedef struct tHash_Table_Item
+ {
+	tKey key;				/* klíč  */
+	tData data;				/* obsah */
+	struct tHash_Table_Item* next_item;	/* ukazatel na další synonymum */
+} tHash_Table_Item;
 
-typedef enum
-{
-    INT,
-    DOUBLE,
-    STRING,
-} Variable_type;
-
-/**
-  * @union Data_value
-  * @brief Hodnota dat v tabulce symbolů.
-  */
-
-typedef union
-{
-    int int_value;
-    double double_value;
-    char* string_value;
-} Data_value;
-
-/**
- * @struct St_item
- * @brief Položka v záznamu.
- */
+/* HT s explicitně zřetězenými synonymy. */
+typedef tHash_Table_Item* tHash_Table[HT_SIZE];
 
 typedef struct
 {
-    Identificator_type identificator_type;
-    Variable_type variable_type;
-    Data_value data;
-} St_item;
+	tHash_Table* HT_array[HT_STACK_SIZE];
+	int top;
+} tSymtable;
 
- /**
-  * @struct St_entry
-  * @brief Záznam v tabulce některé z tabulek symbolů (v případě že je více kontextů).
-  */
 
-typedef struct
-{
-    unsigned long key;
-    St_item* value;
-} St_entry;
+/* Hlavičky funkcí. */
+
+/* FUNKCE PRO TABULKU SYMBOLU */
 
 /**
- * @struct St_table
- * @brief Tabulka symbolů.
- */
-
-typedef struct
-{
-    int size;
-    int item_count;
-    St_entry** entries;
-} St_table;
-
-/**
- * @struct St_context_table
- * @brief Kontextová tabulka. Obsahuje ukazatele na tabulky symbolů. Plní se jako zásobník.
- */
-
-typedef struct
-{
-    int capacity;
-    int context_count;
-    St_table *context_frames[MAX_CONTEXT_FRAMES];
-} St_context_table;
-
-/**
- * Inicializace tabulky kontextů.
- *
- * @param context_table Ukazatel na tabulku kontextů.
- * @post context_table.context_frames[0] obsahuje odkaz na hlavní tabulku symbolů.
- */
-
-void st_init_context_table(St_context_table* context_table);
-
-/**
- * Vloží do tabulky kontextů novou (prázdnou) tabulku symbolů, která reprezentuje nový kontext.
- *
- * @param context_table Ukazatel na tabulku kontextů.
- * @post Poslední prvek context_table.context_frames je odkaz na nově vloženou tabulku symbolů.
- */
-
-void st_create_context_frame(St_context_table* context_table);
-
-/**
- * Odstraní z tabulky kontextů poslední vloženou tabulku symbolů. Data v ní uložená se odstraní. Simuluje odstranění lokálních proměnných funkce.
- *
- * @param context_table Ukazatel na tabulku kontextů.
- * @post Poslední prvek context_table.context_frames je odstraněn, včetně jeho obsahu.
- */
-
-void st_pop_context_frame(St_context_table* context_table);
-
-/**
- * Inicializace prázdné tabulky symbolů.
- *
- * @param t_init Ukazatel na ukayatel na tabulku.
- * @post Pole entries[] obsahuje ukazatele inicializované na hodnotu NULL.
- */
-
-void st_init_table(St_table** t_init);
-
-/**
- * Inicializace záznamu v tabulce symbolů.
- *
- * @param e_init Ukazatel na záznam.
- * @post Key = 0, Value = NULL
- */
-
-void st_init_entry(St_entry** e_init);
-
-/**
- * Uvolnění záznamu z paměti.
- *
- * @param e_delete Ukazatel na záznam.
- */
-
-void st_delete_entry(St_entry** e_delete);
-
-/**
- * Uvolnění tabulky symbolů z paměti.
- *
- * @param t_delete Ukazatel na tabulku.
- */
-
-void st_delete_table(St_table** t_delete);
-
-/**
- * Vložení položky do nejaktuálnější tabulky symbolů. Tedy do nejnovějšího kontextu který vznikl.
- *
- * @param context_table Ukazatel na tabulku kontextů.
- * @param identificator Identifikátor podle kterého bude vygenerován hash klíč.
- * @param value Ukazatel na položku která bude vložena do tabulky.
- * @post Záznam je uložen v tabulce symbolů pod hashem vygenerovaným z identifikátoru.
- */
-
-void st_insert_item_in_current_context(St_context_table* context_table, char* identificator, St_item* value);
-
-/**
- * Vyhledání položky ve všech tabulkách symbolů. Prohledají se všechny kontext.
- *
- * @param context_table Ukazatel na tabulku kontextů.
- * @param identificator Identifikátor pro vygenerování hash klíče.
- * @return Ukazatel na nalezenou položku. NULL v případě že položka nebyla nalezena.
- */
-
-St_item* st_search_item_in_all_contexts(St_context_table* context_table, char* identificator);
-
-/**
- * Vyhledání položky v aktuální tabulce symbolů. Prohledá se jen nejaktuálnější kontext.
- *
- * @param context_table Ukazatel na tabulku kontextů.
- * @param identificator Identifikátor pro vygenerování hash klíče.
- * @return Ukazatel na nalezenou položku. NULL v případě že položka nebyla nalezena.
- */
-
-St_item* st_search_item_in_current_context(St_context_table* context_table, char* identificator);
-
-/**
- * Vygenerování hash klíče z identifikátoru.
- *
- * @param s Identifikator pro generovaní hash klíče.
- * @return Hash klíč.
- *
- */
-
-unsigned long st_generate_hash(char *s);
-
-/**
- * Uvolnění všech symbolických tabulek a jejich obsahu z paměti.
- *
- * @param context_table Ukazatel na tabulku kontextů.
- *
- */
-
-void st_free_all(St_context_table* context_table);
-
-/**
- * Funkce zatím není navržena ani implementována.
+ * Inicializace symtablu (aka zasobniku hash tabulek)
+ * a vlozeni hash tabulky reprezentujici hlavni kontext
  * 
- * @param error_number Číslo chyby.
+ * @param symtable Vstupní tabulka symbolů 
+ * @post Inicializovany symtable, na vrcholu zasobniku je hash tabulka reprezentujici hlavni kontext
  */
+void st_init (tSymtable *symtable);
 
-void error_handle(int error_number);
+/**
+ * Push nově alokované tabulky do zásobníku hash tabulek
+ * 
+ * @param symtable Vstupní tabulka symbolů 
+ * @post Do tabulky symbolu je vložena nová hash tabulka, která reprezentuje aktuální kontext
+ */
+void st_indent (tSymtable *symtable);
+
+// TODO
+void st_dedent (tSymtable *symtable);
+
+/**
+ * Přidá záznam dat do aktuální hash tabulky
+ * V případě že záznam se stejným klíčem již existuje, data se přepíší
+ * 
+ * @param symtable Vstupní tabulka symbolů 
+ * @post 
+ */
+void st_insert_entry_in_current_context (tSymtable *symtable, tKey key, tData data);
+
+// TODO
+tData* st_search_entry (tSymtable *symtable, tKey key);
+
+/**
+ * Uvolneni tabulky symbolu z pameti
+ * 
+ * @param symtable Vstupní tabulka symbolů 
+ * @post Všechny ukazatelé (včetně zanořených) jsou uvolněny a nastaveny na NULL
+ */
+void st_clean_all (tSymtable *symtable);
+
+
+/* FUNKCE PRO HASH TABULKU */
+
+/**
+ * Inicializace hash tabulky
+ * 
+ * @param hash_table Vstupní hash tabulka
+ * @pre hash_table má již alokovanou paměť
+ * @post Všechny ukazatelé v hash_table jsou nastaveny na NULL
+ */
+void ht_init (tHash_Table* hash_table);
+
+/**
+ * Uvolnění hash tabulky z paměti
+ * 
+ * @param hash_table Vstupní hash tabulka
+ * @post Všechny ukazatelé v hash_table jsou uvolněny nastaveny na NULL
+ */
+void ht_clean (tHash_Table* hash_table);
+
+/**
+ * Vyhledání položky v hash tabulce na základě klíče
+ * 
+ * @param hash_table Vstupní hash tabulka
+ * @param key Hashovací klíč
+ * @return Ukazatel na nalezenou položku, v ostatních případech NULL
+ */
+tHash_Table_Item* ht_search (tHash_Table* hash_table, tKey key);
+
+// /**
+//  * 
+//  * @param hash_table Vstupní hash tabulka
+//  * @param key Hashovací klíč
+//  * @return 
+//  */
+// void htInsert ( tHash_Table* ptrht, tKey key, tData data )
+
+// void htInit ( tHash_Table* ptrht );
+
+// tHash_Table_Item* htSearch ( tHash_Table* ptrht, tKey key );
+
+// void htInsert ( tHash_Table* ptrht, tKey key, tData data );
+
+// tData* htRead ( tHash_Table* ptrht, tKey key );
+
+// void htDelete ( tHash_Table* ptrht, tKey key );
+
+// void htClearAll ( tHash_Table* ptrht );
+
+int st_generate_hash(tKey key);
 
 #endif

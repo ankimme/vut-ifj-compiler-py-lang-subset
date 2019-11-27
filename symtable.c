@@ -3,244 +3,315 @@
  * @brief Implementace tabulky symbolů pomocí hashovací tabulky
  * @author Andrea Chimenti (xchime00@stud.fit.vutbr.cz)
  * @author Martin Šerý (xserym01@stud.fit.vutbr.cz)
- * @date 26.10.2019
+ * @date 18.11.2019
  *
  * Projekt: Implementace překladače imperativního jazyka IFJ19 (varianta II)
  * VUT FIT
  * 
- * Implementace inspirována z následujícího zdroje:
- * https://github.com/jamesroutley/write-a-hash-table/tree/master/02-hash-table
  */
 
 #include "symtable.h"
 
+/* FUNKCE PRO TABULKU SYMBOLU */
 
-void st_init_context_table(St_context_table* context_table)
+void st_init (tSymtable *symtable)
 {
-    St_table* main_sym_table;
-    st_init_table(&main_sym_table);
-    context_table->context_frames[0] = main_sym_table;
-    context_table->context_count = 1;
-    context_table->capacity = MAX_CONTEXT_FRAMES;
-
-    for (int i = 1; i < context_table->capacity; i++) // nastaveni pointeru na NULL
+    if (symtable == NULL)
     {
-        context_table->context_frames[i] = NULL;
-    }
-}
-
-void st_create_context_frame(St_context_table* context_table)
-{
-    if (context_table->capacity > context_table->context_count)
-    {
-        St_table* new_sym_table;
-        st_init_table(&new_sym_table);
-        context_table->context_frames[context_table->context_count] = new_sym_table;
-        context_table->context_count++;
-    }
-    else
-    {
-        // prekrocen maximalni pocet kontextu
-        error_handle(99);
-        return;
-    }
-}
-
-void st_pop_context_frame(St_context_table* context_table)
-{
-    if (context_table->context_count > 1)
-    {
-        context_table->context_count--;
-        st_delete_table(&(context_table->context_frames[context_table->context_count]));
-    }
-    else
-    {
-        // pokus o smazani hlavni tabulky symbolu
-        error_handle(99);
-        return;
-    }
-}
-
-void st_init_table(St_table** t_init)
-{
-    *t_init = malloc(sizeof(St_table));
-    if (t_init == NULL)
-    {
-        error_handle(99);
         return;
     }
 
-    (*t_init)->size = INCREMENT_SIZE;
-    (*t_init)->item_count = 0;
-    (*t_init)->entries = malloc(sizeof(St_entry) * INCREMENT_SIZE);
-    if ((*t_init)->entries == NULL)
+    // nastavi ukazatele na hash tabulky na NULL
+    for (int i = 0; i < HT_STACK_SIZE; i++)
     {
-        free(*t_init);
-        *t_init = NULL;
-        error_handle(99);
+        symtable->HT_array[i] = NULL;
+    }
+    // vlozi tabulku hlavniho kontextu do symtablu
+    tHash_Table *new_hash_table = malloc(sizeof(tHash_Table));
+    if (new_hash_table == NULL)
+    {
+        // TODO RAISE MALLOC ERROR
+        return;
+    }
+    ht_init(new_hash_table);
+    symtable->HT_array[0] = new_hash_table;
+    // printf("%lu", sizeof(tHash_Table)); // DELETE
+    symtable->top = 0;
+}
+
+void st_indent (tSymtable *symtable)
+{
+    if (symtable->top >= HT_STACK_SIZE - 1)
+    {
+        // TODO RAISE TOO MANY INDENTS ERROR
         return;
     }
 
-    for(int i = 0; i < (*t_init)->size; i++) // nastaveni pointeru na NULL jako defaultni hodnota
+    // vlozi novou hash tabulku do symtablu
+    tHash_Table *new_hash_table = malloc(sizeof(tHash_Table));
+    if (new_hash_table == NULL)
     {
-        (*t_init)->entries[i] = NULL;
+        // TODO RAISE MALLOC ERROR
+        return;
     }
-
-} 
-
-void st_delete_table(St_table** t_delete)
-{
-    for (int i = 0; i < (*t_delete)->size; i++)
-    {
-        St_entry* entry = (*t_delete)->entries[i];
-        if (entry != NULL)
-        {
-            st_delete_entry(&entry);
-        }
-    }
-
-    free((*t_delete)->entries);
-    (*t_delete)->entries = NULL;
-    free(*t_delete);
-    (*t_delete) = NULL;
+    ht_init(new_hash_table);
+    symtable->top++;
+    symtable->HT_array[symtable->top] = new_hash_table;
 }
 
-void st_init_entry(St_entry** e_init)
+void st_dedent (tSymtable *symtable)
 {
-    *e_init = malloc(sizeof(St_entry));
-    if (e_init == NULL)
+    if (symtable->top <= 0)
     {
-        error_handle(99);
+        // TODO RAISE CANNOT DEDENT MAIN CONTEXT
         return;
     }
 
-    (*e_init)->key = 0;
-    (*e_init)->value = NULL;
+    ht_clean(symtable->HT_array[symtable->top]);
+    free(symtable->HT_array[symtable->top]);
+    symtable->HT_array[symtable->top] = NULL;
+    symtable->top--;
 }
 
-void st_delete_entry(St_entry** e_delete)
+void st_insert_entry_in_current_context (tSymtable *symtable, tKey key, tData data)
 {
-    free((*e_delete)->value);
-    (*e_delete)->value = NULL;
-    free(*e_delete); 
-    *e_delete = NULL;
-}
+    tHash_Table *hash_table = symtable->HT_array[symtable->top];
 
-void st_insert_item_in_current_context(St_context_table* context_table, char* identificator, St_item* value)
-{
-    // nalezeni tabulky symbolu s aktualnim kontextem
-    St_table* current_sym_table = context_table->context_frames[context_table->context_count - 1];
-
-    // vytvoreni noveho zaznamu s pozadovanymi daty
-    St_entry* ins_entry;
-    st_init_entry(&ins_entry);
-    ins_entry->key = st_generate_hash(identificator);
-    ins_entry->value = value;
+    tHash_Table_Item* item = ht_search(hash_table, key);
+    if (item != NULL) // pokud existuje polozka se stejnym klicem, jednoducse prepise jeji data
+    {
+        item->data = data;
+        return;
+    }
     
-    St_item* existing_item = st_search_item_in_current_context(context_table, identificator); // hleda jestli v tabulce jiz existuje zaznam se stejnym hash klicem
-    if (existing_item == NULL) // pokud nebyl nalezen prvek se stejnym klicem, pak pokracuje ve vkladani
+    // polozka neexistuje => pokracuje se ve vkladani na zacatek seznamu
+    int hash = st_generate_hash(key);
+    tHash_Table_Item* new_item = malloc(sizeof(tHash_Table_Item));
+    if (new_item == NULL)
     {
-        if (current_sym_table->size == current_sym_table->item_count) // v pripade ze v tabulce neni dostatek mista, pokusi se alokovat vice
-        {
-            current_sym_table->entries = realloc(current_sym_table->entries, sizeof(St_entry) * current_sym_table->size + sizeof(St_entry) * INCREMENT_SIZE); // prideleni vetsi pameti poli entries
-            if (current_sym_table->entries == NULL)
-            {
-                error_handle(99);
-                return;
-            }
+        // TODO RAISE MALLOC ERROR
+        return;
+    }
+    new_item->key = key;
+    new_item->data = data;
+    new_item->next_item = (*hash_table)[hash];
+    (*hash_table)[hash] = new_item;
 
-            for(int i = current_sym_table->size; i < current_sym_table->size + INCREMENT_SIZE; i++) // nastaveni pointeru na NULL jako defaultni hodnota
-            {
-                current_sym_table->entries[i] = NULL;
-            }
-        
-            current_sym_table->size += INCREMENT_SIZE;
-        }
-        current_sym_table->entries[current_sym_table->item_count] = ins_entry;
-        current_sym_table->item_count++;
-    }
-    else // pokud byl nalezen prvek se stejnym klicem, zaznam se prepise
-    {
-        free(existing_item);
-        existing_item = ins_entry->value;
-    }
+    return;
 }
 
-St_item* st_search_item_in_all_contexts(St_context_table* context_table, char* identificator)
+tData* st_search_entry (tSymtable *symtable, tKey key)
 {
-    unsigned long hash = st_generate_hash(identificator);
-    St_table* table;
-    for (int i = context_table->context_count - 1; i >= 0; i--)
+
+    tHash_Table_Item* item;
+
+    for (int i = symtable->top; i >= 0; i--)
     {
-        table = context_table->context_frames[i];
-        for (int j = 0; j < table->item_count; j++)
+        tHash_Table *hash_table = symtable->HT_array[i];
+        int hash = st_generate_hash(key);
+        item = (*hash_table)[hash]; // prvni polozka v zretezenem seznamu
+
+        // prohledani zretezeneho seznamu
+        while (item != NULL)
         {
-            if (table->entries[j]->key == hash)
+            if (!strcmp(item->key, key))
             {
-                return table->entries[j]->value;
+                return &(item->data);
             }
+            item = item->next_item;
         }
     }
     return NULL;
 }
 
-St_item* st_search_item_in_current_context(St_context_table* context_table, char* identificator)
+void st_clean_all (tSymtable *symtable)
 {
-    unsigned long hash = st_generate_hash(identificator);
-    St_table* table = context_table->context_frames[context_table->context_count - 1];
-    for (int i = 0; i < table->item_count; i++)
+    // projizdi v zasobniku tabulky jednu po jedne
+    for (int i = symtable->top; i >= 0; i--)
     {
-        if (table->entries[i]->key == hash)
-        {
-            return table->entries[i]->value;
-        }
+        ht_clean(symtable->HT_array[i]);
+        free(symtable->HT_array[i]);
+        symtable->HT_array[i] = NULL;
     }
+}
+
+/* FUNKCE PRO HASH TABULKU */
+
+void ht_init (tHash_Table* hash_table)
+{
+    // nastaveni pointeru v tabulce na NULL
+    for (int i = 0; i < HT_SIZE; i++)
+    {
+        (*hash_table)[i] = NULL;
+    }
+}
+
+void ht_clean ( tHash_Table* hash_table )
+{
+    tHash_Table_Item* item;
+    tHash_Table_Item* next_item;
+
+    // prochazeni celeho pole
+    for (int i = 0; i < HT_SIZE; i++)
+    {
+        item = (*hash_table)[i]; // prvni polozka v zretezenem seznamu
+        // prochazeni zretezenych seznamu (polozek pole)
+        while(item != NULL)
+        {
+            next_item = item->next_item;
+            free(item);
+            item = next_item;
+        }
+        (*hash_table)[i] = NULL;
+    }
+}
+
+tHash_Table_Item* ht_search ( tHash_Table* hash_table, tKey key )
+{
+    tHash_Table_Item* item;
+
+    int hash = st_generate_hash(key);
+    item = (*hash_table)[hash]; // prvni polozka v zretezenem seznamu
+
+    // prohledani zretezeneho seznamu
+    while (item != NULL)
+    {
+        if (!strcmp(item->key, key))
+        {
+            return item;
+        }
+        item = item->next_item;
+    }
+
     return NULL;
 }
 
-unsigned long st_generate_hash(char *s)
+// void ht_insert ( tHash_Table* hash_table, tKey key, tData* data )
+// {
+//     tHash_Table_Item* item = htSearch(hash_table, key);
+//     if (item != NULL) // pokud existuje polozka se stejnym klicem, jednoducse prepise jeji data
+//     {
+//         item->data = data;
+//         return;
+//     }
+    
+//     // polozka neexistuje => pokracuje se ve vkladani na zacatek seznamu
+//     int hash = hashCode(key);
+//     tHash_Table_Item* new_item = malloc(sizeof(tHash_Table_Item));
+//     if (new_item != NULL)
+//     {
+//         new_item->key = key;
+//         new_item->data = data;
+//         new_item->next_item = (*hash_table)[hash];
+//     }
+//     (*hash_table)[hash] = new_item;
+
+//     return;
+// }
+
+// /*
+// ** TRP s explicitně zřetězenými synonymy.
+// ** Tato procedura vkládá do tabulky ptrht položku s klíčem key a s daty
+// ** data.  Protože jde o vyhledávací tabulku, nemůže být prvek se stejným
+// ** klíčem uložen v tabulce více než jedenkrát.  Pokud se vkládá prvek,
+// ** jehož klíč se již v tabulce nachází, aktualizujte jeho datovou část.
+// **
+// ** Využijte dříve vytvořenou funkci htSearch.  Při vkládání nového
+// ** prvku do seznamu synonym použijte co nejefektivnější způsob,
+// ** tedy proveďte.vložení prvku na začátek seznamu.
+// **/
+
+
+
+// /*
+// ** TRP s explicitně zřetězenými synonymy.
+// ** Tato funkce zjišťuje hodnotu datové části položky zadané klíčem.
+// ** Pokud je položka nalezena, vrací funkce ukazatel na položku
+// ** Pokud položka nalezena nebyla, vrací se funkční hodnota NULL
+// **
+// ** Využijte dříve vytvořenou funkci HTSearch.
+// */
+
+// tData* htRead ( tHTable* ptrht, tKey key )
+// {
+//     tHTItem* item = htSearch(ptrht, key);
+//     return item != NULL ? &(item->data) : NULL;
+// }
+
+// /*
+// ** TRP s explicitně zřetězenými synonymy.
+// ** Tato procedura vyjme položku s klíčem key z tabulky
+// ** ptrht.  Uvolněnou položku korektně zrušte.  Pokud položka s uvedeným
+// ** klíčem neexistuje, dělejte, jako kdyby se nic nestalo (tj. nedělejte
+// ** nic).
+// **
+// ** V tomto případě NEVYUŽÍVEJTE dříve vytvořenou funkci HTSearch.
+// */
+
+// void htDelete ( tHTable* ptrht, tKey key )
+// {
+//     tHTItem* item;
+//     int hash = hashCode(key);
+
+//     item = (*ptrht)[hash]; // prvni polozka v poli na indexu danem klicem
+    
+//     if (item == NULL) // zadna polozka indexu danem klicem v poli neexistuje
+//     {
+//         return;
+//     }
+
+//     if (!strcmp(item->key, key)) // pokud je mazana polozka prvni v zretezenem seznamu
+//     {
+//         tHTItem* temp = item->ptrnext;
+//         free((*ptrht)[hash]);
+//         (*ptrht)[hash] = temp;
+//         return;
+//     }
+
+//     // hledani prvku v zretezenem seznamu
+//     while (item->ptrnext != NULL)
+//     {
+//         if (!strcmp(item->ptrnext->key, key))
+//         {
+//             if (item->ptrnext->ptrnext != NULL)// mazany prvek neni posledni
+//             {
+//                 tHTItem* temp = item->ptrnext->ptrnext;
+//                 free(item->ptrnext);
+//                 item->ptrnext = temp;
+//                 return;
+//             }
+//             else // mazany prvek je posledni
+//             {
+//                 free(item->ptrnext);
+//                 item->ptrnext = NULL;
+//                 return;
+//             }
+//         }
+//         item = item->ptrnext;
+//     }
+// }
+
+// /* TRP s explicitně zřetězenými synonymy.
+// ** Tato procedura zruší všechny položky tabulky, korektně uvolní prostor,
+// ** který tyto položky zabíraly, a uvede tabulku do počátečního stavu.
+// */
+
+
+
+int st_generate_hash(tKey key)
 {
     unsigned long hash = 1, pow;
-    const int len_s = strlen(s);
-    int loop_stop = (len_s * len_s) % 500;
+    const int len_s = strlen(key);
+    int loop_stop = ((len_s * len_s) % 500) + 5;
 
     for (int i = 0; i < loop_stop; i++)
     {
         pow = 2;
         for (int j = 0; j < len_s; j++)
         {
-            pow *= s[j] * (i + 1);
+            pow *= key[j] * (i + 1);
         }
         hash += pow;
     }
-    return hash;
-}
-
-void st_free_all(St_context_table* context_table)
-{
-    St_table* table;
-    for (int i = context_table->context_count - 1; i >= 0; i--)
-    {
-        table = context_table->context_frames[i];
-        for (int j = 0; j < table->item_count; j++)
-        {
-            free(table->entries[j]->value);
-            table->entries[j]->value = NULL;
-            free(table->entries[j]);
-            table->entries[j] = NULL;
-        }
-        free(table->entries);
-        table->entries = NULL;
-        free(table);
-        table = NULL;
-    }
-    context_table->context_count = 0;
-}
-
-void error_handle(int error_number)
-{
-    // TODO
-    // st_free_all(&context_table);
-    if (error_number) {};
-    return;
+    return (hash % HT_SIZE);
 }
