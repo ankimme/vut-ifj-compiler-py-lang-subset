@@ -12,7 +12,10 @@
 
 int clean_all(Errors err, dynamic_string *str)
 {
-    string_free(str);
+    if (err)
+    {
+        string_free(str);
+    }
 
     return err;
 }
@@ -78,7 +81,8 @@ void get_next_token(St_token *token, tStack* stack)
 
     //vytvoření stringu pro aktuální stav automatu
     
-    dynamic_string *string = NULL;
+
+    dynamic_string *string = malloc(sizeof(dynamic_string));
     if (!string_init(string))
     {
         token->error_value = clean_all(INTERNAL_ERROR, string);
@@ -169,11 +173,9 @@ void get_next_token(St_token *token, tStack* stack)
                 return;
             }
         }
-        else
-        {
-            ungetc(c,stdin);
-        }
+        
     }
+            ungetc(c,stdin);
 
     
 
@@ -359,7 +361,8 @@ void get_next_token(St_token *token, tStack* stack)
                         token->type = TOKEN_IDENTIFIER; //identifikátor
                     }
                     token->attribute.string = string;
-                    token->error_value = clean_all(NO_ERROR, string);
+                    token->error_value = clean_all(NO_ERROR, string); //TODO
+                    // token->error_value = NO_ERROR;
                     return;
                 }
 
