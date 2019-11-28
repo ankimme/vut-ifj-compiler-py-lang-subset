@@ -23,18 +23,18 @@ int main()
 
     string_init(string);
 
-    strings_append(string, two);
-    strings_append(string, two);
-    strings_append(string, one);
-    strings_append(string, three);
-    // strings_append(string, three);
-    // strings_append(string, three);
-    // strings_append(string, three);
-    // strings_append(string, three);
-    // strings_append(string, three);
-    // strings_append(string, three);
-    // strings_append(string, three);
-    // strings_append(string, three);
+    string_append(string, two);
+    string_append(string, two);
+    string_append(string, one);
+    string_append(string, three);
+    // string_append(string, three);
+    // string_append(string, three);
+    // string_append(string, three);
+    // string_append(string, three);
+    // string_append(string, three);
+    // string_append(string, three);
+    // string_append(string, three);
+    // string_append(string, three);
 
     // string_clear(string);
 
