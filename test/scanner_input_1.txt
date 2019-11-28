@@ -1,1 +1,28 @@
-a 1 (
+#! /usr/bin/env python3
+
+
+def foo():
+    print(cd)
+    test = 'FAILED'
+    print(test)
+
+
+cd = 6
+test = 'TEST'
+
+print(test)
+foo()
+print(test)
+
+a = 5
+print(a)
+foo()
+print(a)
+
+while a > 0:
+    a = 1
+    b = 'ahoj'
+    if True:
+        if True:
+            if True:
+                c = 3
