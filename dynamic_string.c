@@ -2,6 +2,7 @@
  * @file dynamic_string.c
  * @brief Pomocná knihovna pro tvorbu a práci s řetězci
  * @author Matej Alexej Helc (xhelcm00@stud.fit.vutbr.cz)
+ * @author Andrea Chimenti (xchime00@stud.fit.vutbr.cz)
  * @date 27.10.2019
  *
  * Projekt: Implementace překladače imperativního jazyka IFJ19 (varianta II)
@@ -78,7 +79,7 @@ int string_add_char(dynamic_string *s, char c)
 	return 1;
 }
 
-int strings_append(dynamic_string *s, char *string)
+int string_append(dynamic_string *s, char *string)
 {
 	int new_string_length = s->length + strlen(string) + 1; // delka vcetne znaku '\0'
 
