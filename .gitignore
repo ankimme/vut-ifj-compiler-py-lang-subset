@@ -3,3 +3,4 @@ ifj19
 test.py
 symtable_test
 scanner_test
+dynamic_string_test
