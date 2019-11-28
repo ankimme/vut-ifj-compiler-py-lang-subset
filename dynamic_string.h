@@ -2,7 +2,7 @@
  * @file dynamic_string.h
  * @brief Deklarace struktur a funkcí pro dynamic_string knihovnu
  * @author Matej Alexej Helc (xhelcm00@stud.fit.vutbr.cz)
- * @date XX.XX.2019
+ * @date 27.10.2019
  *
  * Projekt: Implementace překladače imperativního jazyka IFJ19 (varianta II)
  * VUT FIT
@@ -14,11 +14,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define CHUNK_SIZE 32
+
 typedef struct
 {
     char *str;
-    unsigned int length;
-    unsigned int alloc_size;
+    int length;
+    int allocated_size;
 } dynamic_string;
 
 /**
@@ -26,7 +28,7 @@ typedef struct
  *
  * @param s Ukazeteľ na reťazec.
  */
-void dynamic_string_clear(dynamic_string *s);
+void string_clear(dynamic_string *s);
 
 /**
  * Inicializácia dynamického reťazca.
@@ -44,14 +46,6 @@ int string_init(dynamic_string *s);
 void string_free(dynamic_string *s);
 
 /**
- * Obráti reťazec.
- *
- * @param dynamic_string Dynamický reťazec.
- * @return Vracia obrátený reťazec.
- */
-char string_rev(dynamic_string *dynamic_string);
-
-/**
  * Pridá znak na koniec dynamického reťazca.
  *
  * @param s Dynamický reťazec.
@@ -67,6 +61,6 @@ int string_add_char(dynamic_string *s, char c);
  * @param const_string Reťazec, konštanta.
  * @return 1 ak sa zreťazenie podarilo, 0 ak nie.
  */
-int strings_cat(dynamic_string *s, const char *string);
+int strings_append(dynamic_string *s, char *string);
 
 #endif
