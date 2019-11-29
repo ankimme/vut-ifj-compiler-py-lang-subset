@@ -158,6 +158,11 @@ void get_next_token(St_token *token, tStack* stack)
 
                 if (counter <= indentation) //generuj dedent
                 {
+                    for (int i = 0; i < counter; i++)
+                    {
+                        ungetc(' ',stdin);
+                    }
+
                     token->type = TOKEN_DEDENT;
                     token->error_value = clean_all(NO_ERROR, string);
 
@@ -181,7 +186,25 @@ void get_next_token(St_token *token, tStack* stack)
         }
         
     }
+    else if ((c == EOF) && (new_line == 0)) //dogenerování dedentů
+    {
+        int indentation;
+        tStack_top (stack, &indentation);
+        if (indentation != 0)
+        {
+            new_line = 1;
+
             ungetc(c,stdin);
+
+            tStack_pop(stack);
+            tStack_top (stack, &indentation);
+            
+            token->type = TOKEN_DEDENT;
+            token->error_value = clean_all(NO_ERROR, string);
+            return;
+        }
+    }
+    ungetc(c,stdin);
 
     
 
