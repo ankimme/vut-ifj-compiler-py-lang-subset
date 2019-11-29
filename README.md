@@ -2,7 +2,6 @@
 
 **Členové**
 * Jan Klhůfek
-* Matěj Alexej Helc
 * Andrea Chimenti
 * Martin Šerý
 
