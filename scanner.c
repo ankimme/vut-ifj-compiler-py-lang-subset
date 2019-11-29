@@ -13,6 +13,7 @@
 int clean_all(Errors err, dynamic_string *str)
 {
     string_free(str);
+    free(str);
 
     return err;
 }
@@ -30,7 +31,7 @@ int is_keyword(dynamic_string *string)
     }
 }
 
-
+/*
 void convert_to_integer(dynamic_string *str, St_token *token)
 {
     errno = 0;
@@ -45,7 +46,8 @@ void convert_to_integer(dynamic_string *str, St_token *token)
         return;
     }
 
-    token->attribute.number = integer_num;
+   
+    token->attribute = string;
     token->error_value = clean_all(NO_ERROR, str);
     return;
 }
@@ -68,7 +70,7 @@ void convert_to_double(dynamic_string *str, St_token *token)
     token->error_value = clean_all(NO_ERROR, str);
     return;
 }
-
+*/
 
 void get_next_token(St_token *token, tStack* stack)
 {
@@ -78,7 +80,8 @@ void get_next_token(St_token *token, tStack* stack)
 
     //vytvoření stringu pro aktuální stav automatu
     
-    dynamic_string *string = NULL;
+
+    dynamic_string *string = malloc(sizeof(dynamic_string));
     if (!string_init(string))
     {
         token->error_value = clean_all(INTERNAL_ERROR, string);
@@ -92,10 +95,6 @@ void get_next_token(St_token *token, tStack* stack)
         new_line = 0; //další token nebude první na řádku
         int counter = 0;
 
-        if (c == '\"') //dokumentační řetězec je na začátku řádku, v pořádku
-        {
-            new_line = 1;
-        }
             
         while (c == ' ') //počet mezer odsazení
         {
@@ -104,24 +103,35 @@ void get_next_token(St_token *token, tStack* stack)
             c = getchar();
         }
     
-        if ((counter > 0) && (c == '\"')) //nemůže přijít dokumentační řetězec, chyba
-        {
-            token->error_value = clean_all(LEXICAL_ERROR, string);
-            return;
-        }
+        // if ((counter > 0) && (c == '\"')) //nemůže přijít dokumentační řetězec, chyba
+        // {
+        //     token->error_value = clean_all(LEXICAL_ERROR, string);
+        //     return;
+        // } DELETE
 
         if (counter >= 0) //generuj token INDENT či DEDENT
         {
             int indentation;
             tStack_top (stack, &indentation);
 
-            if (c == '#') //komentář, indent se negeneruje
+            if (c == '#') {} //komentář, indent se negeneruje
+            // {
+                // continue; DELETE
+                // ungetc(c,stdin);
+            // }
+            else if ((c == '\"') && (indentation == counter))
             {
-                ungetc(c,stdin);
+                new_line = 1;
             }
+            else if ((c == '\"') && (counter == 0))
+            {
+                new_line = 1;
+            }
+            else if (c == '\"') {}
             else if (c == '\n') //EOL, indent se negeneruje
             {
-                ungetc(c,stdin);   
+                // continue;
+                // ungetc(c,stdin);   DELETE
             }
             else if ((c == EOF) && (indentation != 0)) //dogenerování dedentů
             {
@@ -148,6 +158,11 @@ void get_next_token(St_token *token, tStack* stack)
 
                 if (counter <= indentation) //generuj dedent
                 {
+                    for (int i = 0; i < counter; i++)
+                    {
+                        ungetc(' ',stdin);
+                    }
+
                     token->type = TOKEN_DEDENT;
                     token->error_value = clean_all(NO_ERROR, string);
 
@@ -162,18 +177,16 @@ void get_next_token(St_token *token, tStack* stack)
             else if (counter > indentation) //INDENT
             {
                 tStack_push(stack, counter);
-
+                ungetc(c, stdin);
                 token->type = TOKEN_INDENT;
                 token->error_value = clean_all(NO_ERROR, string);
 
                 return;
             }
         }
-        else
-        {
-            ungetc(c,stdin);
-        }
     }
+    
+    ungetc(c,stdin);
 
     
 
@@ -299,9 +312,25 @@ void get_next_token(St_token *token, tStack* stack)
                 }
                 else if (c == EOF) //EOF
                 {
+                    int indentation;
+                    tStack_top (stack, &indentation);
+                    if (indentation != 0) //dogenerování dedentů
+                    {
+                        new_line = 1;
+
+                        ungetc(c,stdin);
+
+                        tStack_pop(stack);
+                        tStack_top (stack, &indentation);
+                        
+                        token->type = TOKEN_DEDENT;
+                        token->error_value = clean_all(NO_ERROR, string);
+                        return;
+                    }
+                    
                     token->type = TOKEN_EOF;
                     token->error_value = clean_all(NO_ERROR, string);
-                    return;
+                    return;    
                 }
                 else if (c == '(') //levá závorka
                 {
@@ -358,7 +387,13 @@ void get_next_token(St_token *token, tStack* stack)
                     {
                         token->type = TOKEN_IDENTIFIER; //identifikátor
                     }
-                    token->attribute.string = string;
+
+                    if (!string_append(token->attribute, string->str))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    
                     token->error_value = clean_all(NO_ERROR, string);
                     return;
                 }
@@ -399,20 +434,21 @@ void get_next_token(St_token *token, tStack* stack)
 
                     token->type = TOKEN_INTEGER; //celé číslo
                     
-                    convert_to_integer(string, token); //převede celé nezáporné číslo ze stringu do integeru, v případě přetečení/podtečení nastaví INTERNAL_ERROR    
+                    if (!string_append(token->attribute, string->str))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    token->error_value = clean_all(NO_ERROR, string);
+
                     return;
                 }
 
                 break;
 
             case ZERO:
-                if (c == '0') //více nul
+                if (c == '0') //přebytečné nuly ignorovány
                 {
-                    if (!string_add_char(string, c))
-                    {
-                        token->error_value = clean_all(INTERNAL_ERROR, string);
-                        return;
-                    }
                     state = ZERO;
                 }
                 else if (c == '.') //desetinná tečka
@@ -424,21 +460,22 @@ void get_next_token(St_token *token, tStack* stack)
                     }
                     state = decimal_point;
                 }
-                else if (c >= '1' && c <= '9') //číslo
+                else if (c >= '1' && c <= '9') //přebytečné nuly před číslem, chyba
                 {
-                    if (!string_add_char(string, c))
-                    {
-                        token->error_value = clean_all(INTERNAL_ERROR, string);
-                        return;
-                    }
-                    state = excess;
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
                 }
                 else //jedna nula
                 {
                     ungetc(c,stdin);
 
-                    token->type = TOKEN_INTEGER; //integer
-                    convert_to_integer(string, token); //převede celé nezáporné číslo ze stringu do integeru, v případě přetečení/podtečení nastaví INTERNAL_ERROR    
+                    token->type = TOKEN_INTEGER; //celé číslo
+                    if (!string_append(token->attribute, string->str))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    token->error_value = clean_all(NO_ERROR, string);
                     return;
                 }
 
@@ -505,7 +542,13 @@ void get_next_token(St_token *token, tStack* stack)
 
                     token->type = TOKEN_DOUBLE; //desetinný literál
                     
-                    convert_to_double(string, token); //převede desetinný literál ze stringu do doublu, v případě přetečení/podtečení nastaví INTERNAL_ERROR
+                    if (!string_append(token->attribute, string->str))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    token->error_value = clean_all(NO_ERROR, string);
+
                     return;
                 }
 
@@ -572,23 +615,51 @@ void get_next_token(St_token *token, tStack* stack)
 
                     token->type = TOKEN_DOUBLE; //desetinný literál
                     
-                    convert_to_double(string, token); //převede desetinný literál ze stringu do doublu, v případě přetečení/podtečení nastaví INTERNAL_ERROR
+                    if (!string_append(token->attribute, string->str))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+                    token->error_value = clean_all(NO_ERROR, string);
+
                     return;
                 }
 
                 break;
 
             case commentary:
-                if (c != '\n')
+                if ((c != '\n') && (c != EOF))
                 {
                     state = commentary;
                 }
-                else
+                else if (c == '\n')
                 {
                     new_line = 1;
                     token->type = TOKEN_EOL;  //EOL         
                     token->error_value = clean_all(NO_ERROR, string);
                     return; 
+                }
+                else
+                {    
+                    int indentation;
+                    tStack_top (stack, &indentation);
+                    if (indentation != 0) //dogenerování dedentů
+                    {
+                        new_line = 1;
+
+                        ungetc(c,stdin);
+
+                        tStack_pop(stack);
+                        tStack_top (stack, &indentation);
+                        
+                        token->type = TOKEN_DEDENT;
+                        token->error_value = clean_all(NO_ERROR, string);
+                        return;
+                    }
+                
+                    token->type = TOKEN_EOF;  //EOF         
+                    token->error_value = clean_all(NO_ERROR, string);
+                    return;     
                 }
 
                 break;
@@ -703,7 +774,12 @@ void get_next_token(St_token *token, tStack* stack)
                 {
                     state = backslash;
                 }
-                else
+                else if (c == EOF)
+                {
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
+                }
+                else    
                 {
                     state = quotation_mark_3;
                 }
@@ -718,6 +794,11 @@ void get_next_token(St_token *token, tStack* stack)
                 else if (c == '\\')
                 {
                     state = backslash;
+                }
+                else if (c == EOF)
+                {
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
                 }
                 else
                 {
@@ -735,6 +816,11 @@ void get_next_token(St_token *token, tStack* stack)
                 {
                     state = backslash;
                 }
+                else if (c == EOF)
+                {
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
+                }
                 else
                 {
                     state = quotation_mark_3;
@@ -743,9 +829,14 @@ void get_next_token(St_token *token, tStack* stack)
                 break;
 
             case backslash:
-                if (c)
+                if (c != EOF)
                 {
                     state = quotation_mark_3;
+                }
+                else
+                {
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
+                    return;
                 }
 
                 break;
@@ -788,8 +879,19 @@ void get_next_token(St_token *token, tStack* stack)
                         return;
                     }
                     token->type = TOKEN_STRING_LITERAL; //token typu ŘETĚZCOVÝ LITERÁL
-                    token->attribute.string = string;
+
+                    if (!string_append(token->attribute, string->str))
+                    {
+                        token->error_value = clean_all(INTERNAL_ERROR, string);
+                        return;
+                    }
+
                     token->error_value = clean_all(NO_ERROR, string);
+                    return;
+                }
+                else if (c == EOF)
+                {
+                    token->error_value = clean_all(LEXICAL_ERROR, string);
                     return;
                 }
                 else
@@ -863,7 +965,4 @@ void get_next_token(St_token *token, tStack* stack)
                 break;
         }
     }
-
-    //TODO
-    //Přidat tokeny dedentů
 }
