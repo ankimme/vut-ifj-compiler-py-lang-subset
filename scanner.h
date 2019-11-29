@@ -91,57 +91,46 @@ typedef enum
 
 typedef enum 
 {
-    TOKEN_INDENT,
-    TOKEN_DEDENT,
+    TOKEN_INDENT, // 0
+    TOKEN_DEDENT, // 1
 
-    TOKEN_EOL,
-    TOKEN_EOF,
+    TOKEN_EOL, // 2
+    TOKEN_EOF, // 3
 
-    TOKEN_COMMA,
-    TOKEN_COLON,
+    TOKEN_COMMA, // 4
+    TOKEN_COLON, // 5
 
-    TOKEN_LEFT_BRACKET,
-    TOKEN_RIGHT_BRACKET,
+    TOKEN_LEFT_BRACKET, // 6
+    TOKEN_RIGHT_BRACKET, // 7
 
-    TOKEN_PLUS,
-    TOKEN_MINUS,
-    TOKEN_MULTIPLY,
+    TOKEN_PLUS, // 8
+    TOKEN_MINUS, // 9
+    TOKEN_MULTIPLY, // 10
 
-    TOKEN_KEYWORD,
-    TOKEN_IDENTIFIER,
+    TOKEN_KEYWORD, // 11
+    TOKEN_IDENTIFIER, // 12
 
-    TOKEN_INTEGER,
-    TOKEN_DOUBLE,
+    TOKEN_INTEGER, // 13
+    TOKEN_DOUBLE, // 14
 
-    TOKEN_NOT_EQUAL,
-    TOKEN_EQUAL,
+    TOKEN_NOT_EQUAL, //15
+    TOKEN_EQUAL, // 16
 
-    TOKEN_LESS_OR_EQUAL,
-    TOKEN_GREATER_OR_EQUAL,
+    TOKEN_LESS_OR_EQUAL, // 17
+    TOKEN_GREATER_OR_EQUAL, // 18
 
-    TOKEN_LESS_THAN,
-    TOKEN_GREATER_THAN,
-    TOKEN_ASSIGNMENT,
+    TOKEN_LESS_THAN, // 19
+    TOKEN_GREATER_THAN, // 20
+    TOKEN_ASSIGNMENT, // 21
 
-    TOKEN_DIVIDE_INTEGER,
-    TOKEN_DIVIDE_FLOAT,
+    TOKEN_DIVIDE_INTEGER, // 22
+    TOKEN_DIVIDE_FLOAT, // 23
 
-    TOKEN_STRING_LITERAL,
+    TOKEN_STRING_LITERAL, // 24
+    
+    UNDEFINED, // 25
 }Token_type;
 
-/**
- *
- * @union Token_value.
- * @brief Druhy atributu tokenu.
- *
- */
-
-typedef union 
-{
-    dynamic_string *string;
-    int number;
-    double decimal;
-}Token_value;
 
 /**
  *
@@ -153,7 +142,7 @@ typedef union
 typedef struct Token
 {
     Token_type type;
-    Token_value attribute;
+    dynamic_string *attribute;
     int error_value;
 }St_token;
 
@@ -189,6 +178,8 @@ int clean_all(Errors err, dynamic_string *str);
 
 int is_keyword(dynamic_string *string);
 
+
+
 /**
  * Převod řetězce na celočíselný literál.
  *
@@ -198,7 +189,7 @@ int is_keyword(dynamic_string *string);
  *
  */
 
-void convert_to_integer(dynamic_string *str, St_token *token);
+//void convert_to_integer(dynamic_string *str, St_token *token);
 
 /**
  * Převod řetězce na desetinný literál.
@@ -209,6 +200,6 @@ void convert_to_integer(dynamic_string *str, St_token *token);
  *
  */
 
-void convert_to_double(dynamic_string *str, St_token *token);
+//void convert_to_double(dynamic_string *str, St_token *token);
 
 #endif
