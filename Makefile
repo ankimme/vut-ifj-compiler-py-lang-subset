@@ -7,7 +7,7 @@ CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -Werror -pedantic
 LFLAGS = -lm
 DFLAGS = -g -O0 # debug flags
-FILES = main.c scanner.c dynamic_string.c stack.c symtable.c
+FILES = main.c scanner.c dynamic_string.c stack.c symtable.c parser.c expressions.c
 TEST_FOLDER = test
 TEST_FILES = symtable_test scanner_test dynamic_string_test
 
