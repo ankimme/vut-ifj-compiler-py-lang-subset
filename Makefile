@@ -7,11 +7,11 @@ CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -Werror -pedantic
 LFLAGS = -lm
 DFLAGS = -g -O0 # debug flags
-FILES = main.c scanner.c dynamic_string.c stack.c symtable.c parser.c expressions.c
+FILES = main.c scanner.c dynamic_string.c stack.c symtable.c parser.c expressions.c precedent_stack.c
 TEST_FOLDER = test
-TEST_FILES = symtable_test scanner_test dynamic_string_test
+TEST_FILES = symtable_test scanner_test dynamic_string_test precedent_stack_test
 
-.PHONY: all valgrind doc clean symtable_test scanner_test dynamic_string_test
+.PHONY: all valgrind doc clean symtable_test scanner_test dynamic_string_test precedent_stack_test
 
 $(PROJECT): $(FILES)
 	$(CC) $(CFLAGS) $(DFLAGS) -o $@ $(FILES) $(LFLAGS)
@@ -37,4 +37,8 @@ scanner_test: scanner.c $(TEST_FOLDER)/scanner_test.c
 
 dynamic_string_test: dynamic_string.c $(TEST_FOLDER)/dynamic_string_test.c
 	$(CC) $(CFLAGS) $(DFLAGS) -o $@ dynamic_string.c $(TEST_FOLDER)/$@.c $(LFLAGS)
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./$@
+
+precedent_stack_test: precedent_stack.c $(TEST_FOLDER)/precedent_stack_test.c
+	$(CC) $(CFLAGS) $(DFLAGS) -o $@ precedent_stack.c $(TEST_FOLDER)/$@.c $(LFLAGS)
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./$@
