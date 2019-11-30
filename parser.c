@@ -19,7 +19,8 @@ int start_analysis()
     }
 
     // nacteni prvniho tokenu
-    get_next_token(parser_data->current_token, parser_data->scanner_stack);
+    // get_next_token(parser_data->current_token, parser_data->scanner_stack); DELETE
+    get_token_and_set_error_code(parser_data);
     prog(parser_data);
 
     int error_code = parser_data ? parser_data->error_code : 99;
@@ -90,7 +91,7 @@ bool get_token_and_set_error_code(tParser_data *parser_data)
     // zachyceni lexikalni chyby
     if (parser_data->current_token->error_value)
     {
-        parser_data->error_code = parser_data->current_token->error_value;
+        set_error_code(parser_data, parser_data->current_token->error_value);
         return false;
     }
     return true;
@@ -106,10 +107,18 @@ bool get_compare_check(tParser_data *parser_data, Token_type type)
         }
         else
         {
-            parser_data->error_code = 2;
+            set_error_code(parser_data, 2);
         }
     }
     return false;
+}
+
+void set_error_code(tParser_data *parser_data, int new_code)
+{
+    if (parser_data->error_code == 0)
+    {
+        parser_data->error_code = new_code;
+    }
 }
 
 bool prog(tParser_data *parser_data)
@@ -209,7 +218,7 @@ bool prog(tParser_data *parser_data)
     // TODO
     else
     {
-        parser_data->error_code = 2;
+        set_error_code(parser_data, 2);
         return false;
     }
     
@@ -233,7 +242,7 @@ bool params(tParser_data *parser_data)
     // TODO
     else
     {
-        parser_data->error_code = 2;
+        set_error_code(parser_data, 2);
         return false;
     }
     

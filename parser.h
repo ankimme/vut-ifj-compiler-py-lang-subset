@@ -69,6 +69,14 @@ bool get_token_and_set_error_code(tParser_data *parser_data);
 bool get_compare_check(tParser_data *parser_data, Token_type type);
 
 /**
+ * Nastaví nový error code pouze v případě, že již nebyl dříve nastaven.
+ * 
+ * @param parser_data Ukazel na struktu tParser_data
+ * @param new_code Nový error code
+ */
+void set_error_code(tParser_data *parser_data, int new_code);
+
+/**
  * Rozgenerovává neterminál PROG
  *
  * @param parser_data Ukazel na struktu tParser_data
