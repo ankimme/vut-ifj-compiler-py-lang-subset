@@ -47,19 +47,31 @@ typedef enum
 
 /**
  *
- * @enum Prec_stack_symbols.
- * @brief Typy symbolů na zásobníku precedenční analýzy
+ * @enum Prec_stack_symbol.
+ * @brief Typy symbolů na zásobníku precedenční analýzy.
  *
  */
 
 typedef enum
 {
-    EXPR_NONTERMINAL,
-    EXPR_TERMINAL,
-    EXPR_HANDLE,
-    EXPR_UNDEFINED,
-}Prec_stack_symbols;
+    SYMBOL_NONTERMINAL,
+    SYMBOL_TERMINAL,
+    SYMBOL_HANDLE,
+    SYMBOL_UNDEFINED,
+}Prec_stack_symbol;
 
+/**
+ *
+ * @enum Prec_derive.
+ * @brief Počet symbolů potřebných k derivování aktuálního pravidla.
+ *
+ */
+
+typedef enum
+{
+    DERIVATION_VALUE = 1,   //E -> value
+    DERIVATION_RULE = 3,    //E -> E OP E (OP značí operátor) || (E)
+}Prec_derivation;
 
 void process_expression();
 

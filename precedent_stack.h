@@ -23,7 +23,7 @@
 
 typedef struct symbol
 {
-    Prec_stack_symbols type;
+    Prec_stack_symbol type;
     char* str;
     struct symbol *next_ptr;
 }*tSymbol;
@@ -71,7 +71,7 @@ int tPrec_stack_empty (const tPrec_stack* prec_s);
  *
  */
 
-int tPrec_stack_push(tPrec_stack* prec_s, Prec_stack_symbols type, char* string);
+int tPrec_stack_push(tPrec_stack* prec_s, Prec_stack_symbol type, char* string);
 
 /**
  * Získání terminálu vyskytujícího se nejvýše u vrcholu zásobníku. 
@@ -93,7 +93,11 @@ tSymbol tPrec_stack_top_term(tPrec_stack* prec_s);
  *
  */
 
-int tPrec_stack_push_handle(tPrec_stack* prec_s, Prec_stack_symbols type, char* string);
+int tPrec_stack_push_handle(tPrec_stack* prec_s, Prec_stack_symbol type, char* string);
+
+void tPrec_stack_pop(tPrec_stack* prec_s);
+
+void tPrec_stack_pop_handle(tPrec_stack* prec_s, Prec_derivation derivation);
 
 /**
  * Uvolnění paměti všech symbolů zásobníku

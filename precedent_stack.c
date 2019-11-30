@@ -24,7 +24,7 @@ int tPrec_stack_empty (const tPrec_stack* prec_s)
     return ((prec_s->top == NULL) ? 1 : 0); //1 je prázdný, 0 není
 }
 
-int tPrec_stack_push(tPrec_stack* prec_s, Prec_stack_symbols type, char* string)
+int tPrec_stack_push(tPrec_stack* prec_s, Prec_stack_symbol type, char* string)
 {
     tSymbol new_symbol = malloc(sizeof(struct symbol));
 
@@ -53,7 +53,7 @@ tSymbol tPrec_stack_top_term(tPrec_stack* prec_s)
 
         while(top_symbol != NULL) //dokud nejsme na konci zásobníku hledej terminál
         {
-            if (top_symbol->type == EXPR_TERMINAL) //našel se terminál
+            if (top_symbol->type == SYMBOL_TERMINAL) //našel se terminál
             {
                 return top_symbol;
             }
@@ -68,9 +68,9 @@ tSymbol tPrec_stack_top_term(tPrec_stack* prec_s)
     }
 }
 
-int tPrec_stack_push_handle(tPrec_stack* prec_s, Prec_stack_symbols type, char* string)
+int tPrec_stack_push_handle(tPrec_stack* prec_s, Prec_stack_symbol type, char* string)
 {
-    if (type != EXPR_HANDLE) //chceme vkládat pouze handle, jinak chyba
+    if (type != SYMBOL_HANDLE) //chceme vkládat pouze handle, jinak chyba
     {
         return 0;
     }
@@ -79,7 +79,7 @@ int tPrec_stack_push_handle(tPrec_stack* prec_s, Prec_stack_symbols type, char* 
 
     while (top_symbol != NULL) //hledej první terminál a vlož za ním začátek handle (znak [ )
     {
-        if (top_symbol->type == EXPR_TERMINAL) //první na topu je terminál, vlož handle za něj
+        if (top_symbol->type == SYMBOL_TERMINAL) //první na topu je terminál, vlož handle za něj
         {
             if(tPrec_stack_push(prec_s, type, string))
             {
@@ -90,7 +90,7 @@ int tPrec_stack_push_handle(tPrec_stack* prec_s, Prec_stack_symbols type, char* 
                 return 0;
             }
         }
-        else if (top_symbol->next_ptr->type == EXPR_TERMINAL) //terminál se nachází za aktuálním neterminálem, nutno provázat ukazatele
+        else if (top_symbol->next_ptr->type == SYMBOL_TERMINAL) //terminál se nachází za aktuálním neterminálem, nutno provázat ukazatele
         {
             tSymbol new_symbol = malloc(sizeof(struct symbol));
 
@@ -119,12 +119,28 @@ int tPrec_stack_push_handle(tPrec_stack* prec_s, Prec_stack_symbols type, char* 
     return 0; //není terminál
 }
 
-void tPrec_stack_clean(tPrec_stack* prec_s)
+void tPrec_stack_pop(tPrec_stack* prec_s)
 {
-    while (!tPrec_stack_empty(prec_s)) //dokud zásobník není prázdný, uvolňuje paměť
+    if (!tPrec_stack_empty(prec_s))
     {
         tSymbol pop_symbol = prec_s->top;
         prec_s->top = pop_symbol->next_ptr;
         free(pop_symbol);
+    }
+}
+
+void tPrec_stack_pop_handle(tPrec_stack* prec_s, Prec_derivation derivation)
+{
+    for (unsigned int i = 0; i < (derivation+1); i++)
+    {
+           tPrec_stack_pop(prec_s);
+    }
+}
+
+void tPrec_stack_clean(tPrec_stack* prec_s)
+{
+    while (!tPrec_stack_empty(prec_s)) //dokud zásobník není prázdný, uvolňuje paměť
+    {
+        tPrec_stack_pop(prec_s);
     }
 }
