@@ -95,6 +95,15 @@ bool prog(tParser_data *parser_data);
 bool params(tParser_data *parser_data);
 
 /**
+ * Rozgenerovává neterminál PARAMS_N
+ *
+ * @param parser_data Ukazel na struktu tParser_data
+ * @post V případě chyby, nastaví příslušný error code
+ * @return true v případě úspěšného rozgenerování, false v případě chyby
+ */
+bool params_n(tParser_data *parser_data);
+
+/**
  * Rozgenerovává neterminál STATEMENTS
  *
  * @param parser_data Ukazel na struktu tParser_data
@@ -102,5 +111,95 @@ bool params(tParser_data *parser_data);
  * @return true v případě úspěšného rozgenerování, false v případě chyby
  */
 bool statements(tParser_data *parser_data);
+
+/**
+ * Rozgenerovává neterminál SEQUENCE
+ *
+ * @param parser_data Ukazel na struktu tParser_data
+ * @post V případě chyby, nastaví příslušný error code
+ * @return true v případě úspěšného rozgenerování, false v případě chyby
+ */
+bool sequence(tParser_data *parser_data);
+
+/**
+ * Rozgenerovává neterminál SEQUENCE_N
+ *
+ * @param parser_data Ukazel na struktu tParser_data
+ * @post V případě chyby, nastaví příslušný error code
+ * @return true v případě úspěšného rozgenerování, false v případě chyby
+ */
+bool sequence_n(tParser_data *parser_data);
+
+/**
+ * Rozgenerovává neterminál FUNC_RETURN
+ *
+ * @param parser_data Ukazel na struktu tParser_data
+ * @post V případě chyby, nastaví příslušný error code
+ * @return true v případě úspěšného rozgenerování, false v případě chyby
+ */
+bool func_return(tParser_data *parser_data);
+
+/**
+ * Rozgenerovává neterminál RETURN_VALUE
+ *
+ * @param parser_data Ukazel na struktu tParser_data
+ * @post V případě chyby, nastaví příslušný error code
+ * @return true v případě úspěšného rozgenerování, false v případě chyby
+ */
+bool return_value(tParser_data *parser_data);
+
+/**
+ * Rozgenerovává neterminál INSTRUCT
+ *
+ * @param parser_data Ukazel na struktu tParser_data
+ * @post V případě chyby, nastaví příslušný error code
+ * @return true v případě úspěšného rozgenerování, false v případě chyby
+ */
+bool instruct(tParser_data *parser_data);
+
+/**
+ * Rozgenerovává neterminál INSTRUCT_CONTINUE
+ *
+ * @param parser_data Ukazel na struktu tParser_data
+ * @post V případě chyby, nastaví příslušný error code
+ * @return true v případě úspěšného rozgenerování, false v případě chyby
+ */
+bool instruct_continue(tParser_data *parser_data);
+
+/**
+ * Rozgenerovává neterminál TERM
+ *
+ * @param parser_data Ukazel na struktu tParser_data
+ * @post V případě chyby, nastaví příslušný error code
+ * @return true v případě úspěšného rozgenerování, false v případě chyby
+ */
+bool term(tParser_data *parser_data);
+
+/**
+ * Rozgenerovává neterminál TERM_N
+ *
+ * @param parser_data Ukazel na struktu tParser_data
+ * @post V případě chyby, nastaví příslušný error code
+ * @return true v případě úspěšného rozgenerování, false v případě chyby
+ */
+bool term_n(tParser_data *parser_data);
+
+/**
+ * Rozgenerovává neterminál TERM_N_VALUE
+ *
+ * @param parser_data Ukazel na struktu tParser_data
+ * @post V případě chyby, nastaví příslušný error code
+ * @return true v případě úspěšného rozgenerování, false v případě chyby
+ */
+bool term_n_value(tParser_data *parser_data);
+
+/**
+ * Rozgenerovává neterminál TYPE
+ *
+ * @param parser_data Ukazel na struktu tParser_data
+ * @post V případě chyby, nastaví příslušný error code
+ * @return true v případě úspěšného rozgenerování, false v případě chyby
+ */
+bool type(tParser_data *parser_data);
 
 #endif

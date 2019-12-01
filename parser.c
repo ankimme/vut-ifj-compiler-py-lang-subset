@@ -198,9 +198,47 @@ bool prog(tParser_data *parser_data)
                 return false;
             }
         }
-        //TODO
+        // token je "if", "while", "pass" -> pravidlo 1
+        else if (strcmp(parser_data->current_token->attribute->str, "if") == 0 || strcmp(parser_data->current_token->attribute->str, "while") == 0 || strcmp(parser_data->current_token->attribute->str, "pass") == 0)
+        {
+            // musi nasledovat neterminal SEQUENCE
+            get_token_and_set_error_code(parser_data);
+            if (!sequence(parser_data))
+            {
+                return false;
+            }
+
+            // musi nasledovat neterminal PROG
+            get_token_and_set_error_code(parser_data);
+            if (!prog(parser_data))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            set_error_code(parser_data, 2);
+            return false;
+        }
     }
-    // token je EOL
+    // token je identifikator -> pravidlo 1
+    else if (parser_data->current_token->type == TOKEN_IDENTIFIER)
+    {
+        // musi nasledovat neterminal SEQUENCE
+        get_token_and_set_error_code(parser_data);
+        if (!sequence(parser_data))
+        {
+            return false;
+        }
+
+        // musi nasledovat neterminal PROG
+        get_token_and_set_error_code(parser_data);
+        if (!prog(parser_data))
+        {
+            return false;
+        }
+    }
+    // token je EOL -> pravidlo 4
     else if (parser_data->current_token->type == TOKEN_EOL)
     {
         // musi nasledovat neterminal PROG
@@ -210,12 +248,11 @@ bool prog(tParser_data *parser_data)
             return false;
         }
     }
-    // token je EOF
+    // token je EOF -> pravidlo 3
     else if (parser_data->current_token->type == TOKEN_EOF)
     {
         return true;
     }
-    // TODO
     else
     {
         set_error_code(parser_data, 2);
@@ -239,13 +276,60 @@ bool params(tParser_data *parser_data)
         parser_data->unget_token = true;
         return true;
     }
-    // TODO
+    // token je identifikator -> pravidlo 5
+    else if (parser_data->current_token->type == TOKEN_IDENTIFIER)
+    {
+        // musi nasledovat neterminal PARAMS_N
+        get_token_and_set_error_code(parser_data);
+        if (!params_n(parser_data))
+        {
+            return false;
+        }
+    }
     else
     {
         set_error_code(parser_data, 2);
         return false;
     }
     
+    return true;
+}
+
+bool params_n(tParser_data *parser_data)
+{
+    // zachyceni jiz nastale chyby
+    if (parser_data->error_code)
+    {
+        return false;
+    }
+
+    // token je "," -> pravidlo 7
+    if (parser_data->current_token->type == TOKEN_COMMA)
+    {
+        // musi nasledovat identifikator
+        if (!get_compare_check(parser_data, TOKEN_IDENTIFIER))
+        {
+            return false;
+        }
+
+        // musi nasledovat neterminal PARAMS_N
+        get_token_and_set_error_code(parser_data);
+        if (!params_n(parser_data))
+        {
+            return false;
+        }
+    }
+    // token je ")" -> pravidlo 8
+    else if (parser_data->current_token->type == TOKEN_RIGHT_BRACKET)
+    {
+        parser_data->unget_token = true;
+        return true;
+    }
+    else
+    {
+        set_error_code(parser_data, 2);
+        return false;
+    }
     return true;
 }
 
@@ -257,7 +341,518 @@ bool statements(tParser_data *parser_data)
         return false;
     }
 
-    get_token_and_set_error_code(parser_data); // DELETE - only for testing purposes
+    // token je klicove slovo
+    if (parser_data->current_token->type == TOKEN_KEYWORD)
+    {
+        // token je "if", "while", "pass" -> pravidlo 14
+        if (strcmp(parser_data->current_token->attribute->str, "if") == 0 || strcmp(parser_data->current_token->attribute->str, "while") == 0 || strcmp(parser_data->current_token->attribute->str, "pass") == 0)
+        {
+            // musi nasledovat neterminal SEQUENCE
+            // get_token_and_set_error_code(parser_data); DELETE
+            if (!sequence(parser_data))
+            {
+                return false;
+            }
+
+            // musi nasledovat neterminal SEQUENCE_N
+            get_token_and_set_error_code(parser_data);
+            if (!sequence_n(parser_data))
+            {
+                return false;
+            }
+        }
+        // token je "return" -> pravidlo 15
+        else if (strcmp(parser_data->current_token->attribute->str, "return") == 0)
+        {
+            // musi nasledovat neterminal FUNC_RETURN
+            get_token_and_set_error_code(parser_data);
+            if (!func_return(parser_data))
+            {
+                return false;
+            }
+
+            // musi nasledovat neterminal SEQUENCE_N
+            get_token_and_set_error_code(parser_data);
+            if (!sequence_n(parser_data))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            set_error_code(parser_data, 2);
+            return false;
+        }
+    }
+    // token je identifikator -> pravidlo 14
+    else if (parser_data->current_token->type == TOKEN_IDENTIFIER)
+    {
+        // musi nasledovat neterminal SEQUENCE
+        // get_token_and_set_error_code(parser_data); DELETE
+        if (!sequence(parser_data))
+        {
+            return false;
+        }
+
+        // musi nasledovat neterminal SEQUENCE_N
+        get_token_and_set_error_code(parser_data);
+        if (!sequence_n(parser_data))
+        {
+            return false;
+        }
+
+        return true;
+    }
+    else
+    {
+        set_error_code(parser_data, 2);
+        return false;
+    }
+
     return true;
-    // TODO
+}
+
+bool sequence(tParser_data *parser_data)
+{
+    // zachyceni jiz nastale chyby
+    if (parser_data->error_code)
+    {
+        return false;
+    }
+
+    // token je klicove slovo
+    if (parser_data->current_token->type == TOKEN_KEYWORD)
+    {
+        // token je "if" -> pravidlo 10
+        if (strcmp(parser_data->current_token->attribute->str, "if") == 0)
+        {
+            // TODO
+            return false;
+        }
+        // token je "while" -> pravidlo 11
+        else if (strcmp(parser_data->current_token->attribute->str, "while") == 0)
+        {
+            // TODO
+            return false;
+        }
+        // token je "pass" -> pravidlo 13
+        else if (strcmp(parser_data->current_token->attribute->str, "pass") == 0)
+        {
+            // musi nasledovat EOL
+            if (!get_compare_check(parser_data, TOKEN_EOL))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            set_error_code(parser_data, 2);
+            return false;
+        }
+    }
+    // token je identifikator -> pravidlo 12
+    else if (parser_data->current_token->type == TOKEN_IDENTIFIER)
+    {
+        // musi nasledovat neterminal INSTRUCT
+        get_token_and_set_error_code(parser_data);
+        if (!instruct(parser_data))
+        {
+            return false;
+        }
+
+        // musi nasledovat EOL
+        if (!get_compare_check(parser_data, TOKEN_EOL))
+        {
+            return false;
+        }
+    }
+    else
+    {
+        set_error_code(parser_data, 2);
+        return false;
+    }
+
+    return true;
+}
+
+bool sequence_n(tParser_data *parser_data)
+{
+    // zachyceni jiz nastale chyby
+    if (parser_data->error_code)
+    {
+        return false;
+    }
+
+    // token je klicove slovo
+    if (parser_data->current_token->type == TOKEN_KEYWORD)
+    {
+        // token je "if", "while", "pass", "return" -> pravidlo 16
+        if (strcmp(parser_data->current_token->attribute->str, "if") == 0 || strcmp(parser_data->current_token->attribute->str, "while") == 0 || strcmp(parser_data->current_token->attribute->str, "pass") == 0 || strcmp(parser_data->current_token->attribute->str, "return") == 0)
+        {
+            // musi nasledovat neterminal STATEMENTS
+            // get_token_and_set_error_code(parser_data); DELETE
+            if (!statements(parser_data))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            set_error_code(parser_data, 2);
+            return false;
+        }
+    }
+    // token je identifikator -> pravidlo 16
+    else if (parser_data->current_token->type == TOKEN_IDENTIFIER)
+    {
+        // musi nasledovat neterminal STATEMENTS
+        get_token_and_set_error_code(parser_data);
+        if (!statements(parser_data))
+        {
+            return false;
+        }
+    }
+    // token je DEDENT -> pravidlo 17
+    else if (parser_data->current_token->type == TOKEN_DEDENT)
+    {
+        parser_data->unget_token = true;
+        return true;
+    }
+    else
+    {
+        set_error_code(parser_data, 2);
+        return false;
+    }
+
+    return true;
+}
+
+bool func_return(tParser_data *parser_data)
+{
+    // zachyceni jiz nastale chyby
+    if (parser_data->error_code)
+    {
+        return false;
+    }
+
+    // token je klicove slovo
+    if (parser_data->current_token->type == TOKEN_KEYWORD)
+    {
+        // token je "return" -> pravidlo 34
+        if (strcmp(parser_data->current_token->attribute->str, "return") == 0)
+        {
+            // musi nasledovat neterminal RETURN
+            get_token_and_set_error_code(parser_data);
+            if (!return_value(parser_data))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            set_error_code(parser_data, 2);
+            return false;
+        }
+    }
+    else
+    {
+        set_error_code(parser_data, 2);
+        return false;
+    }
+
+    return true;
+}
+
+bool return_value(tParser_data *parser_data)
+{
+    // zachyceni jiz nastale chyby
+    if (parser_data->error_code)
+    {
+        return false;
+    }
+
+    // token je EOL -> pravidlo 35
+    if (parser_data->current_token->type == TOKEN_EOL)
+    {
+        // parser_data->unget_token = true; DELETE
+        return true;
+    }
+    else
+    {
+        set_error_code(parser_data, 2);
+        return false;
+    }
+
+    return true;
+}
+
+bool instruct(tParser_data *parser_data)
+{
+    // zachyceni jiz nastale chyby
+    if (parser_data->error_code)
+    {
+        return false;
+    }
+
+    // token je "(" -> pravidlo 19
+    if (parser_data->current_token->type == TOKEN_LEFT_BRACKET)
+    {
+        // musi nasledovat neterminal TERM
+        get_token_and_set_error_code(parser_data);
+        if (!term(parser_data))
+        {
+            return false;
+        }
+
+        // musi nasledovat ")"
+        if (!get_compare_check(parser_data, TOKEN_RIGHT_BRACKET))
+        {
+            return false;
+        }
+    }
+    // token je "=" -> pravidlo 18
+    else if (parser_data->current_token->type == TOKEN_ASSIGNMENT)
+    {
+        // musi nasledovat neterminal INSTRUCT_CONTINUE
+        get_token_and_set_error_code(parser_data);
+        if (!instruct_continue(parser_data))
+        {
+            return false;
+        }
+    }
+    else
+    {
+        set_error_code(parser_data, 2);
+        return false;
+    }
+
+    return true;
+}
+
+bool instruct_continue(tParser_data *parser_data)
+{
+    // zachyceni jiz nastale chyby
+    if (parser_data->error_code)
+    {
+        return false;
+    }
+
+    // TODO zde se bude rozhodovat zda vstoupit do analyzy vyrazu nebo do vetve pro identifikator, tohle rozhodnuti probehne na zaklade nahlednuti do tabulky symbolu
+
+    // token je identifikator -> pravidlo 21
+    if (parser_data->current_token->type == TOKEN_IDENTIFIER)
+    {
+        // musi nasledovat "("
+        if (!get_compare_check(parser_data, TOKEN_LEFT_BRACKET))
+        {
+            return false;
+        }
+
+        // musi nasledovat neterminal TERM
+        get_token_and_set_error_code(parser_data);
+        if (!term(parser_data))
+        {
+            return false;
+        }
+
+        // musi nasledovat ")"
+        if (!get_compare_check(parser_data, TOKEN_RIGHT_BRACKET))
+        {
+            return false;
+        }
+    }
+    else
+    {
+        set_error_code(parser_data, 2);
+        return false;
+    }
+
+    return true;
+}
+
+bool term(tParser_data *parser_data)
+{
+    // zachyceni jiz nastale chyby
+    if (parser_data->error_code)
+    {
+        return false;
+    }
+
+    // token je klicove slovo
+    if (parser_data->current_token->type == TOKEN_KEYWORD)
+    {
+        // token je "None" -> pravidlo 24
+        if (strcmp(parser_data->current_token->attribute->str, "None") == 0)
+        {
+            // musi nasledovat neterminal TERM_N
+            get_token_and_set_error_code(parser_data);
+            if (!term_n(parser_data))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            set_error_code(parser_data, 2);
+            return false;
+        }
+    }
+    // token je identifikator -> pravidlo 22
+    else if (parser_data->current_token->type == TOKEN_IDENTIFIER)
+    {
+        // musi nasledovat neterminal TERM_N
+        get_token_and_set_error_code(parser_data);
+        if (!term_n(parser_data))
+        {
+            return false;
+        }
+    }
+    // token je ")" -> pravidlo 25
+    else if (parser_data->current_token->type == TOKEN_RIGHT_BRACKET)
+    {
+        parser_data->unget_token = true;
+        return true;
+    }
+    // token je string, int nebo float -> pravidlo 23
+    else if (parser_data->current_token->type == TOKEN_STRING_LITERAL || parser_data->current_token->type == TOKEN_INTEGER || parser_data->current_token->type == TOKEN_DOUBLE)
+    {
+        // musi nasledovat neterminal TYPE
+        //get_token_and_set_error_code(parser_data); // DELETE TODO smazat tento radek ? nejlevejsi derivace
+        if (!type(parser_data))
+        {
+            return false;
+        }
+
+        // musi nasledovat neterminal TERM_N
+        get_token_and_set_error_code(parser_data);
+        if (!term_n(parser_data))
+        {
+            return false;
+        }
+    }
+    else
+    {
+        set_error_code(parser_data, 2);
+        return false;
+    }
+
+    return true;
+}
+
+bool term_n(tParser_data *parser_data)
+{
+    // zachyceni jiz nastale chyby
+    if (parser_data->error_code)
+    {
+        return false;
+    }
+
+    // token je ")" -> pravidlo 27
+    if (parser_data->current_token->type == TOKEN_RIGHT_BRACKET)
+    {
+        parser_data->unget_token = true;
+        return true;
+    }
+    // token je "," -> pravidlo 26
+    else if (parser_data->current_token->type == TOKEN_COMMA)
+    {
+        // musi nasledovat neterminal TERM_N_VALUE
+        get_token_and_set_error_code(parser_data);
+        if (!term_n_value(parser_data))
+        {
+            return false;
+        }
+    }
+    else
+    {
+        set_error_code(parser_data, 2);
+        return false;
+    }
+
+    return true;
+}
+
+bool term_n_value(tParser_data *parser_data)
+{
+    // zachyceni jiz nastale chyby
+    if (parser_data->error_code)
+    {
+        return false;
+    }
+
+    // token je klicove slovo
+    if (parser_data->current_token->type == TOKEN_KEYWORD)
+    {
+        // token je "None" -> pravidlo 30
+        if (strcmp(parser_data->current_token->attribute->str, "None") == 0)
+        {
+            // musi nasledovat neterminal TERM_N
+            get_token_and_set_error_code(parser_data);
+            if (!term_n(parser_data))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            set_error_code(parser_data, 2);
+            return false;
+        }
+    }
+    // token je identifikator -> pravidlo 28
+    else if (parser_data->current_token->type == TOKEN_IDENTIFIER)
+    {
+        // musi nasledovat neterminal TERM_N
+        get_token_and_set_error_code(parser_data);
+        if (!term_n(parser_data))
+        {
+            return false;
+        }
+    }
+    // token je string, int nebo float -> pravidlo 29
+    else if (parser_data->current_token->type == TOKEN_STRING_LITERAL || parser_data->current_token->type == TOKEN_INTEGER || parser_data->current_token->type == TOKEN_DOUBLE)
+    {
+        // musi nasledovat neterminal TYPE
+        get_token_and_set_error_code(parser_data); // DELETE
+        if (!type(parser_data))
+        {
+            return false;
+        }
+
+        // musi nasledovat neterminal TERM_N
+        get_token_and_set_error_code(parser_data);
+        if (!term_n(parser_data))
+        {
+            return false;
+        }
+    }
+    else
+    {
+        set_error_code(parser_data, 2);
+        return false;
+    }
+
+    return true;
+}
+
+bool type(tParser_data *parser_data)
+{
+    // zachyceni jiz nastale chyby
+    if (parser_data->error_code)
+    {
+        return false;
+    }
+
+    // token je string, int nebo float -> pravidla 31, 32, 33
+    else if (parser_data->current_token->type == TOKEN_STRING_LITERAL || parser_data->current_token->type == TOKEN_INTEGER || parser_data->current_token->type == TOKEN_DOUBLE)
+    {
+        return true;
+    }
+    else
+    {
+        set_error_code(parser_data, 2);
+        return false;
+    }    
+
+    return true;
 }
