@@ -11,8 +11,10 @@
 #ifndef EXPRESSIONS_H
 #define EXPRESSIONS_H
 
-#include "scanner.h"
-#include "symtable.h"
+
+#include "parser.h"
+
+#include <stdbool.h>
 
 /**
  *
@@ -60,6 +62,20 @@ typedef enum
     SYMBOL_UNDEFINED,
 }Prec_stack_symbol;
 
+
+typedef enum
+{
+   PREC_PLUS_MINUS,     // +-
+   PREC_MUL_DIV_FLOAT,  // */
+   PREC_DIV_INT,        // //
+   PREC_L_BRACKET,      // (
+   PREC_R_BRACKET,      // )
+   PREC_RELATION_OP,    // RELATION_OP
+   PREC_VALUE,          // VALUE
+
+   PREC_OTHER,          // $
+}Prec_token;
+
 /**
  *
  * @enum Prec_derive.
@@ -73,7 +89,11 @@ typedef enum
     DERIVATION_RULE = 3,    //E -> E OP E (OP značí operátor) || (E)
 }Prec_derivation;
 
-void process_expression();
 
+
+//void clean_resources(tParser_data* parser_data, Errors err, tPrec_stack* prec_stack);
+Prec_token process_token(tParser_data* parser_data);
+
+bool process_expression(tParser_data* parser_data);
 
 #endif
