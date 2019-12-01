@@ -84,7 +84,7 @@ int tPrec_stack_push(tPrec_stack* prec_s, Prec_stack_symbol type, char* string);
 tSymbol tPrec_stack_top_term(tPrec_stack* prec_s);
 
 /**
- * Vložení symbolu pro začátek handle za první nalezený terminál
+ * Vložení symbolu pro začátek handle za první nalezený terminál.
  *
  * @param prec_s Ukazatel na zásobník symbolů pro precedenční analýzu.
  * @param type Typ symbolu (očekáván handle), jejž chceme vložit na zásobník.
@@ -95,12 +95,29 @@ tSymbol tPrec_stack_top_term(tPrec_stack* prec_s);
 
 int tPrec_stack_push_handle(tPrec_stack* prec_s, Prec_stack_symbol type, char* string);
 
+/**
+ * Uvolnění symbolu ze zásobníku a uvolnění jím naalokované paměti.
+ *
+ * @param prec_s Ukazatel na zásobník symbolů pro precedenční analýzu.
+ * @post V případě neprázdného zásobníku bude snížen počet symbolů na zásobníku o 1, jinak zásobník zůstane prázdný.
+ *
+ */
+
 void tPrec_stack_pop(tPrec_stack* prec_s);
+
+/**
+ * Uvolnění paměti všech symbolů zásobníku.
+ *
+ * @param prec_s Ukazatel na zásobník symbolů pro precedenční analýzu.
+ * @param derivation Určuje o jakou obsluhu handle se bude jednat, buď pouhé přiřazení hodnoty či derivování podle složitějšího pravidla. 
+ * @post Odstraní ze zásobníku handle sekvenci a umožní tak její budoucí nahrazení podle odpovídajícího pravidla.
+ *
+ */
 
 void tPrec_stack_pop_handle(tPrec_stack* prec_s, Prec_derivation derivation);
 
 /**
- * Uvolnění paměti všech symbolů zásobníku
+ * Uvolnění paměti všech symbolů zásobníku.
  *
  * @param prec_s Ukazatel na zásobník symbolů pro precedenční analýzu.
  * @post Zanechá prázdný zásobník a uvolní pamět naalokovanou pro symboly zásobníku.

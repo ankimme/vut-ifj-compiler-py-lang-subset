@@ -70,7 +70,7 @@ tSymbol tPrec_stack_top_term(tPrec_stack* prec_s)
 
 int tPrec_stack_push_handle(tPrec_stack* prec_s, Prec_stack_symbol type, char* string)
 {
-    if (type != SYMBOL_HANDLE) //chceme vkládat pouze handle, jinak chyba
+    if (type != SYMBOL_HANDLE) //chceme vkládat pouze typ handle, jinak chyba
     {
         return 0;
     }
@@ -116,7 +116,7 @@ int tPrec_stack_push_handle(tPrec_stack* prec_s, Prec_stack_symbol type, char* s
         }        
     }
 
-    return 0; //není terminál
+    return 0; //v zásobníku není terminál
 }
 
 void tPrec_stack_pop(tPrec_stack* prec_s)
