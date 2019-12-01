@@ -19,7 +19,7 @@ $(PROJECT): $(FILES)
 all: $(PROJECT)
 
 valgrind: $(PROJECT)
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./$(PROJECT)
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./$(PROJECT) < $(TEST_FOLDER)/test_input_1.py
 
 doc:
 	doxygen Doxyfile
