@@ -21,10 +21,9 @@ typedef struct
     St_token *current_token;
     tStack *scanner_stack;
     int error_code;
-    bool unget_token;
+    bool unget_token; // flag který vynutí načíst stejný token znova
+    bool function_definition_scope; // flag určuje zda se právě nacházíme v definici funkce
 } tParser_data;
-
-
 
 /**
  * Zajistí spuštění syntaktické analýzy a překladu vstupního kódu

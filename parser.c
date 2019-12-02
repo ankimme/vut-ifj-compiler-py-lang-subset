@@ -21,9 +21,8 @@ int start_analysis()
     // nacteni prvniho tokenu
     // get_next_token(parser_data->current_token, parser_data->scanner_stack); DELETE
     get_token_and_set_error_code(parser_data);
-    prog(parser_data);
-
-    int error_code = parser_data ? parser_data->error_code : 99;
+    bool unknown_error = !prog(parser_data); // TODO remove unknown error handling
+    int error_code = unknown_error && !parser_data->error_code ? 98 : parser_data->error_code;
     free_parser_data(parser_data);
     free(parser_data);
     parser_data = NULL;
@@ -61,6 +60,9 @@ bool init_parser_data(tParser_data *parser_data)
 
     // inicializace flagu unget_token
     parser_data->unget_token = false;
+
+    // inicializace flagu function_definition_scope
+    parser_data->function_definition_scope = false;
 
     return true;
 }
@@ -194,12 +196,16 @@ bool prog(tParser_data *parser_data)
                 return false;
             }
 
+            parser_data->function_definition_scope = true;
+
             // musi nasledovat neterminal STATEMETS
             get_token_and_set_error_code(parser_data);
             if (!statements(parser_data))
             {
                 return false;
             }
+
+            parser_data->function_definition_scope = false;
 
             // musi nasledovat DEDENT
             if (!get_compare_check(parser_data, TOKEN_DEDENT))
@@ -378,7 +384,7 @@ bool statements(tParser_data *parser_data)
             }
         }
         // token je "return" -> pravidlo 15
-        else if (strcmp(parser_data->current_token->attribute->str, "return") == 0)
+        else if (strcmp(parser_data->current_token->attribute->str, "return") == 0 && parser_data->function_definition_scope)
         {
             // musi nasledovat neterminal FUNC_RETURN
             //get_token_and_set_error_code(parser_data); DELETE
@@ -504,7 +510,7 @@ bool sequence(tParser_data *parser_data)
                 return false;
             }
 
-            // musi nasledovat neterminal STATEMENtS
+            // musi nasledovat neterminal STATEMENTS
             get_token_and_set_error_code(parser_data);
             if (!statements(parser_data))
             {
@@ -517,7 +523,7 @@ bool sequence(tParser_data *parser_data)
                 return false;
             }
 
-            return false;
+            // return false; DElETE
         }
         // token je "while" -> pravidlo 11
         else if (strcmp(parser_data->current_token->attribute->str, "while") == 0)
@@ -577,7 +583,7 @@ bool sequence_n(tParser_data *parser_data)
     if (parser_data->current_token->type == TOKEN_KEYWORD)
     {
         // token je "if", "while", "pass", "return" -> pravidlo 16
-        if (strcmp(parser_data->current_token->attribute->str, "if") == 0 || strcmp(parser_data->current_token->attribute->str, "while") == 0 || strcmp(parser_data->current_token->attribute->str, "pass") == 0 || strcmp(parser_data->current_token->attribute->str, "return") == 0)
+        if (strcmp(parser_data->current_token->attribute->str, "if") == 0 || strcmp(parser_data->current_token->attribute->str, "while") == 0 || strcmp(parser_data->current_token->attribute->str, "pass") == 0 || (strcmp(parser_data->current_token->attribute->str, "return") == 0 && parser_data->function_definition_scope))
         {
             // musi nasledovat neterminal STATEMENTS
             // get_token_and_set_error_code(parser_data); DELETE
@@ -639,7 +645,7 @@ bool func_return(tParser_data *parser_data)
     if (parser_data->current_token->type == TOKEN_KEYWORD)
     {
         // token je "return" -> pravidlo 34
-        if (strcmp(parser_data->current_token->attribute->str, "return") == 0)
+        if (strcmp(parser_data->current_token->attribute->str, "return") == 0 && parser_data->function_definition_scope)
         {
             // musi nasledovat neterminal RETURN
             get_token_and_set_error_code(parser_data);
