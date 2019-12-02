@@ -69,6 +69,17 @@ bool get_token_and_set_error_code(tParser_data *parser_data);
 bool get_compare_check(tParser_data *parser_data, Token_type type);
 
 /**
+ * Načte následující token (záleží na nastavení flagu unget_token) a porovná typ načteného tokenu s typy předaným parametrem. Stačí aby souhlasil jeden.
+ *
+ * @param parser_data Ukazel na struktu tParser_data
+ * @param type Enum hodnota pro 1. porovnání typu tokenu
+ * @param type Enum hodnota pro 2. porovnání typu tokenu
+ * @post V případě neočekávaného typu tokenu, nastaví error_code na 2 (syntaktická chyba)
+ * @return true v případě že úspěchu, false v případě chyby
+ */
+bool get_compare_check_double(tParser_data *parser_data, Token_type type1, Token_type type2);
+
+/**
  * Nastaví nový error code pouze v případě, že již nebyl dříve nastaven.
  * 
  * @param parser_data Ukazel na struktu tParser_data

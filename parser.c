@@ -113,6 +113,22 @@ bool get_compare_check(tParser_data *parser_data, Token_type type)
     return false;
 }
 
+bool get_compare_check_double(tParser_data *parser_data, Token_type type1, Token_type type2)
+{
+    if(get_token_and_set_error_code(parser_data))
+    {
+        if (parser_data->current_token->type == type1 || parser_data->current_token->type == type2)
+        {
+            return true;
+        }
+        else
+        {
+            set_error_code(parser_data, 2);
+        }
+    }
+    return false;
+}
+
 void set_error_code(tParser_data *parser_data, int new_code)
 {
     if (parser_data->error_code == 0)
@@ -202,7 +218,7 @@ bool prog(tParser_data *parser_data)
         else if (strcmp(parser_data->current_token->attribute->str, "if") == 0 || strcmp(parser_data->current_token->attribute->str, "while") == 0 || strcmp(parser_data->current_token->attribute->str, "pass") == 0)
         {
             // musi nasledovat neterminal SEQUENCE
-            get_token_and_set_error_code(parser_data);
+            // get_token_and_set_error_code(parser_data); DELETE
             if (!sequence(parser_data))
             {
                 return false;
@@ -225,7 +241,7 @@ bool prog(tParser_data *parser_data)
     else if (parser_data->current_token->type == TOKEN_IDENTIFIER)
     {
         // musi nasledovat neterminal SEQUENCE
-        get_token_and_set_error_code(parser_data);
+        // get_token_and_set_error_code(parser_data);
         if (!sequence(parser_data))
         {
             return false;
@@ -365,7 +381,7 @@ bool statements(tParser_data *parser_data)
         else if (strcmp(parser_data->current_token->attribute->str, "return") == 0)
         {
             // musi nasledovat neterminal FUNC_RETURN
-            get_token_and_set_error_code(parser_data);
+            //get_token_and_set_error_code(parser_data); DELETE
             if (!func_return(parser_data))
             {
                 return false;
@@ -426,7 +442,81 @@ bool sequence(tParser_data *parser_data)
         // token je "if" -> pravidlo 10
         if (strcmp(parser_data->current_token->attribute->str, "if") == 0)
         {
-            // TODO
+            // TODO expr
+
+            // musi nasledovat ":"
+            if (!get_compare_check(parser_data, TOKEN_COLON))
+            {
+                return false;
+            }
+
+            // musi nasledovat "EOL"
+            if (!get_compare_check(parser_data, TOKEN_EOL))
+            {
+                return false;
+            }
+
+            // musi nasledovat INDENT
+            if (!get_compare_check(parser_data, TOKEN_INDENT))
+            {
+                return false;
+            }
+
+            // musi nasledovat neterminal STATEMENTS
+            get_token_and_set_error_code(parser_data);
+            if (!statements(parser_data))
+            {
+                return false;
+            }
+
+            // musi nasledovat DEDENT
+            if (!get_compare_check(parser_data, TOKEN_DEDENT))
+            {
+                return false;
+            }
+
+            // musi nasledovat "else"
+            if (!get_compare_check(parser_data, TOKEN_KEYWORD))
+            {
+                return false;
+            }
+            if (strcmp(parser_data->current_token->attribute->str, "else") != 0)
+            {
+                set_error_code(parser_data, SYNTAX_ERROR);
+                return false;
+            }
+
+            // musi nasledovat ":"
+            if (!get_compare_check(parser_data, TOKEN_COLON))
+            {
+                return false;
+            }
+            
+            // musi nasledovat "EOL"
+            if (!get_compare_check(parser_data, TOKEN_EOL))
+            {
+                return false;
+            }
+
+            // musi nasledovat INDENT
+            if (!get_compare_check(parser_data, TOKEN_INDENT))
+            {
+                return false;
+            }
+
+            // musi nasledovat neterminal STATEMENtS
+            get_token_and_set_error_code(parser_data);
+            if (!statements(parser_data))
+            {
+                return false;
+            }
+
+            // musi nasledovat DEDENT
+            if (!get_compare_check(parser_data, TOKEN_DEDENT))
+            {
+                return false;
+            }
+
             return false;
         }
         // token je "while" -> pravidlo 11
@@ -438,8 +528,8 @@ bool sequence(tParser_data *parser_data)
         // token je "pass" -> pravidlo 13
         else if (strcmp(parser_data->current_token->attribute->str, "pass") == 0)
         {
-            // musi nasledovat EOL
-            if (!get_compare_check(parser_data, TOKEN_EOL))
+            // musi nasledovat EOL nebo EOF 
+            if (!get_compare_check_double(parser_data, TOKEN_EOL, TOKEN_EOF))
             {
                 return false;
             }
@@ -461,7 +551,7 @@ bool sequence(tParser_data *parser_data)
         }
 
         // musi nasledovat EOL
-        if (!get_compare_check(parser_data, TOKEN_EOL))
+        if (!get_compare_check_double(parser_data, TOKEN_EOL, TOKEN_EOF))
         {
             return false;
         }
@@ -517,6 +607,16 @@ bool sequence_n(tParser_data *parser_data)
     {
         parser_data->unget_token = true;
         return true;
+    }
+    // token je EOL -> ignoruje eol // TODO, test feature, leva rekurze
+    else if (parser_data->current_token->type == TOKEN_EOL)
+    {
+        // musi nasledovat neterminal SEQUENCE_N
+        get_token_and_set_error_code(parser_data);
+        if (!sequence_n(parser_data))
+        {
+            return false;
+        }
     }
     else
     {
@@ -813,7 +913,7 @@ bool term_n_value(tParser_data *parser_data)
     else if (parser_data->current_token->type == TOKEN_STRING_LITERAL || parser_data->current_token->type == TOKEN_INTEGER || parser_data->current_token->type == TOKEN_DOUBLE)
     {
         // musi nasledovat neterminal TYPE
-        get_token_and_set_error_code(parser_data); // DELETE
+        //get_token_and_set_error_code(parser_data); // DELETE
         if (!type(parser_data))
         {
             return false;
