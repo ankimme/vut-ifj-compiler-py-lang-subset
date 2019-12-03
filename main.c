@@ -8,7 +8,16 @@
  * VUT FIT
  */
 
+#include "parser.h"
+
 int main()
 {
-    return 0;
+    printf("\033[0;36m");
+
+    int error_code = start_analysis();
+    
+    printf("ANALYSIS ENDED WITH ERROR CODE: %i\n", error_code);
+
+    printf("\033[0m"); 
+    return error_code;
 }
