@@ -40,5 +40,5 @@ dynamic_string_test: dynamic_string.c $(TEST_FOLDER)/dynamic_string_test.c
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./$@
 
 precedent_stack_test: precedent_stack.c $(TEST_FOLDER)/precedent_stack_test.c
-	$(CC) $(CFLAGS) $(DFLAGS) -o $@ precedent_stack.c $(TEST_FOLDER)/$@.c $(LFLAGS)
+	$(CC) $(CFLAGS) $(DFLAGS) -o $@ precedent_stack.c $(TEST_FOLDER)/$@.c dynamic_string.c $(LFLAGS)
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./$@
