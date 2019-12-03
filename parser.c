@@ -9,6 +9,7 @@
  */
 
 #include "parser.h"
+#include "expressions.h"
 
 int start_analysis()
 {
@@ -448,7 +449,12 @@ bool sequence(tParser_data *parser_data)
         // token je "if" -> pravidlo 10
         if (strcmp(parser_data->current_token->attribute->str, "if") == 0)
         {
-            // TODO expr
+            // musi nasledovat expression
+            get_token_and_set_error_code(parser_data);
+            if (!process_expression(parser_data))
+            {
+                return false;
+            }
 
             // musi nasledovat ":"
             if (!get_compare_check(parser_data, TOKEN_COLON))
@@ -654,6 +660,10 @@ bool sequence_n(tParser_data *parser_data)
         // parser_data->unget_token = true;
         // return true;
     }
+    // else if (parser_data->current_token->type == TOKEN_EOF) // TODO test feature
+    // {
+    //     return true;
+    // }
     else
     {
         set_error_code(parser_data, 2);
