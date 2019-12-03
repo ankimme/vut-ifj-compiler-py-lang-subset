@@ -183,7 +183,7 @@ bool process_prec_table(tParser_data* parser_data, tPrec_stack* prec_stack, Prec
             if (prec_stack->top->next_ptr->type == SYMBOL_HANDLE)
             {
                 tPrec_stack_pop_handle(prec_stack, DERIVATION_VALUE);
-                if(!tPrec_stack_push(prec_stack, SYMBOL_TERMINAL, parser_data->current_token->type, parser_data->current_token->attribute->str)) //internal error, pokud se symbol nepodaří vložit na zásobník
+                if(!tPrec_stack_push(prec_stack, SYMBOL_NONTERMINAL, UNDEFINED, "E")) //internal error, pokud se symbol nepodaří vložit na zásobník
                 {
                     set_error_code(parser_data, INTERNAL_ERROR);
                     return false;
@@ -223,7 +223,7 @@ bool process_prec_table(tParser_data* parser_data, tPrec_stack* prec_stack, Prec
 bool process_expression(tParser_data* parser_data)
 {
 
-    if(&parser_data->error_code != NO_ERROR)
+    if(parser_data->error_code != NO_ERROR)
     {
         return false;  
     }
@@ -260,7 +260,7 @@ bool process_expression(tParser_data* parser_data)
         return false;
     }
 
-    while ((strcmp(term->attribute->str, "$") != 0) && (prec_token_type != PREC_OTHER))
+    do
     {
         if (process_prec_table(parser_data, &prec_stack, prec_term_type, prec_token_type))
         {
@@ -273,7 +273,7 @@ bool process_expression(tParser_data* parser_data)
             clean_resources(parser_data, &prec_stack);
             return false;
         }
-    }
+    } while ((strcmp(term->attribute->str, "$") != 0) || (prec_token_type != PREC_OTHER));
 
     clean_resources(parser_data, &prec_stack);
     return true;
