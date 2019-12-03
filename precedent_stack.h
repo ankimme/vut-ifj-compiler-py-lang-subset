@@ -11,8 +11,48 @@
 #ifndef PRECEDENT_STACK_H
 #define PRECEDENT_STACK_H
 
-#include "expressions.h"
 #include "dynamic_string.h"
+#include "scanner.h"
+
+/**
+ *
+ * @enum Prec_stack_symbol.
+ * @brief Typy symbolů na zásobníku precedenční analýzy.
+ *
+ */
+
+typedef enum
+{
+    SYMBOL_NONTERMINAL, // DERIVATED RULE
+    SYMBOL_TERMINAL,    // ONE OF TOKEN VALUES PUSHED ON STACK
+    SYMBOL_HANDLE,      // [
+}Prec_stack_symbol;
+
+
+typedef enum
+{
+   PREC_PLUS_MINUS,     // +-
+   PREC_MUL_DIVS,       // */ //
+   PREC_L_BRACKET,      // (
+   PREC_R_BRACKET,      // )
+   PREC_RELATION_OP,    // RELATION_OP
+   PREC_VALUE,          // VALUE
+
+   PREC_OTHER,          // $ a jiné tokeny
+}Prec_token;
+
+/**
+ *
+ * @enum Prec_derive.
+ * @brief Počet symbolů potřebných k derivování aktuálního pravidla.
+ *
+ */
+
+typedef enum
+{
+    DERIVATION_VALUE = 1,   //E -> value
+    DERIVATION_RULE = 3,    //E -> E OP E (OP značí operátor) || (E)
+}Prec_derivation;
 
 /**
  *
@@ -24,7 +64,8 @@
 typedef struct symbol
 {
     Prec_stack_symbol type;
-    char* str;
+    Token_type value_type;
+    dynamic_string* attribute;
     struct symbol *next_ptr;
 }*tSymbol;
 
@@ -65,13 +106,14 @@ int tPrec_stack_empty (const tPrec_stack* prec_s);
  * Vložení symbolu na vrchol zásobníku. 
  *
  * @param prec_s Ukazatel na zásobník symbolů pro precedenční analýzu.
- * @param type Platný typ symbolu, jejž chceme vložit na vrchol zásobníku.
- * @param string Konkrétní znak symbolu načtený ze vstupní pásky vkládaný na zásobník.
+ * @param type Určuje, zda se vkládá terminál či neterminál na vrchol zásobníku.
+ * @param value_type Typ symbolu načteného ze vstupní pásky (typ tokenu).
+ * @param string Konkrétní symbol načtený ze vstupní pásky a vkládaný na zásobník.
  * @return Vrací hodnotu 1 v případě úspěšného vložení symbolu na zásobník, jinak vrací hodnotu 0.
  *
  */
 
-int tPrec_stack_push(tPrec_stack* prec_s, Prec_stack_symbol type, char* string);
+int tPrec_stack_push(tPrec_stack* prec_s, Prec_stack_symbol type, Token_type value_type, char* string);
 
 /**
  * Získání terminálu vyskytujícího se nejvýše u vrcholu zásobníku. 
@@ -84,16 +126,14 @@ int tPrec_stack_push(tPrec_stack* prec_s, Prec_stack_symbol type, char* string);
 tSymbol tPrec_stack_top_term(tPrec_stack* prec_s);
 
 /**
- * Vložení symbolu pro začátek handle za první nalezený terminál.
+ * Vložení symbolu pro začátek handle za první nalezený terminál nejblíže vrcholu.
  *
  * @param prec_s Ukazatel na zásobník symbolů pro precedenční analýzu.
- * @param type Typ symbolu (očekáván handle), jejž chceme vložit na zásobník.
- * @param string Znak uvozující začátek handle načtený ze vstupní pásky.
  * @return V případě úspěšného vložení symbolu pro začátek handle vrací 1, jinak vrací 0.
  *
  */
 
-int tPrec_stack_push_handle(tPrec_stack* prec_s, Prec_stack_symbol type, char* string);
+int tPrec_stack_push_handle(tPrec_stack* prec_s);
 
 /**
  * Uvolnění symbolu ze zásobníku a uvolnění jím naalokované paměti.

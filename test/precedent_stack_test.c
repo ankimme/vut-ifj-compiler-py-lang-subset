@@ -11,6 +11,40 @@
 
 #include "../precedent_stack.h"
 
+const char* get_token_type(int type) 
+{
+   switch (type) 
+   {
+      case 0: return "Indent";
+      case 1: return "Dedent";
+      case 2: return "EOL";
+      case 3: return "EOF";
+      case 4: return "Comma";
+      case 5: return "Colon";
+      case 6: return "Left bracket";
+      case 7: return "Right bracket";
+      case 8: return "Plus";
+      case 9: return "Minus";
+      case 10: return "Multiply";
+      case 11: return "Keyword";
+      case 12: return "Identifier";
+      case 13: return "Integer";
+      case 14: return "Double";
+      case 15: return "Not equal";
+      case 16: return "Equal";
+      case 17: return "Less or equal";
+      case 18: return "Greater or equal";
+      case 19: return "Less than";
+      case 20: return "Greater than";
+      case 21: return "Assignment";
+      case 22: return "Divide integer";
+      case 23: return "Divide float";
+      case 24: return "String literal";
+      case 25: return "Undefined";
+      default: return "ERROR";
+   }
+}
+
 const char* get_symbol_type(int type) 
 {
    switch (type) 
@@ -18,10 +52,10 @@ const char* get_symbol_type(int type)
       case 0: return "NONTERMINAL";
       case 1: return "TERMINAL";
       case 2: return "HANDLE";
-      case 3: return "UNDEFINED";
       default: return "ERROR!";
    }
 }
+
 
 void print_top(tPrec_stack* prec_stack)
 {
@@ -31,8 +65,9 @@ void print_top(tPrec_stack* prec_stack)
 
     if (!tPrec_stack_empty(prec_stack))
     {
-        printf("Type: %s\n", get_symbol_type(prec_stack->top->type));
-        printf("Symbol: %s\n", prec_stack->top->str);
+        printf("Symbol type: %s\n", get_symbol_type(prec_stack->top->type));
+        printf("Value type: %s\n", get_token_type(prec_stack->top->value_type));
+        printf("Symbol: %s\n", prec_stack->top->attribute->str);
 
         if (prec_stack->top->next_ptr == NULL)
         {
@@ -40,7 +75,7 @@ void print_top(tPrec_stack* prec_stack)
         }
         else
         {
-            printf("Next symbol: %s\n", prec_stack->top->next_ptr->str);
+            printf("Next symbol: %s\n", prec_stack->top->next_ptr->attribute->str);
         }
 
         printf("\n");
@@ -71,8 +106,9 @@ void print_top_terminal(tPrec_stack* prec_stack)
         }
         else
         {
-            printf("Type: %s\n", get_symbol_type(term->type));
-            printf("Symbol: %s\n", term->str);
+            printf("Symbol type: %s\n", get_symbol_type(term->type));
+            printf("Value type: %s\n", get_token_type(prec_stack->top->value_type));
+            printf("Symbol: %s\n", term->attribute->str);
 
             if (term->next_ptr == NULL)
             {
@@ -80,7 +116,7 @@ void print_top_terminal(tPrec_stack* prec_stack)
             }
             else
             {
-                printf("Next symbol: %s\n", term->next_ptr->str);
+                printf("Next symbol: %s\n", term->next_ptr->attribute->str);
             }
         }
     }
@@ -109,9 +145,9 @@ void pop_handle(tPrec_stack* prec_stack, Prec_derivation derivation)
     printf("\033[0;36m");
 }
 
-void push_handle(tPrec_stack* prec_stack, Prec_stack_symbol type, char* string)
+void push_handle(tPrec_stack* prec_stack)
 {
-    if (tPrec_stack_push_handle(prec_stack, type, string))
+    if (tPrec_stack_push_handle(prec_stack))
     {
         printf("\033[0;32m");
         printf("HANDLE INSERTED\n");
@@ -132,17 +168,19 @@ int main()
 
     tPrec_stack_init(&prec_stack);
 
-    tPrec_stack_push(&prec_stack, SYMBOL_TERMINAL, "$");
-    tPrec_stack_push(&prec_stack, SYMBOL_TERMINAL, "+");
-    tPrec_stack_push(&prec_stack, SYMBOL_NONTERMINAL, "55");
-    tPrec_stack_push(&prec_stack, SYMBOL_NONTERMINAL, "E");
-    tPrec_stack_push(&prec_stack, SYMBOL_TERMINAL, "i1");
+
+    tPrec_stack_push(&prec_stack, SYMBOL_TERMINAL, UNDEFINED,"$");
+    tPrec_stack_push(&prec_stack, SYMBOL_TERMINAL, TOKEN_PLUS, "+");
+    tPrec_stack_push(&prec_stack, SYMBOL_TERMINAL, TOKEN_INTEGER, "55");
+    tPrec_stack_push(&prec_stack, SYMBOL_NONTERMINAL, UNDEFINED, "E");
+    tPrec_stack_push(&prec_stack, SYMBOL_TERMINAL, TOKEN_IDENTIFIER, "i1");
+    
 
     print_top(&prec_stack);
     print_top_terminal(&prec_stack);
 
-    push_handle(&prec_stack, SYMBOL_HANDLE, "[");
-    tPrec_stack_push(&prec_stack, SYMBOL_TERMINAL, "i2");
+    push_handle(&prec_stack);
+    //tPrec_stack_push(&prec_stack, SYMBOL_TERMINAL, TOKEN_IDENTIFIER, "i2");
     //pop_symbol(&prec_stack);
 
     print_top(&prec_stack);
@@ -163,8 +201,18 @@ int main()
     tPrec_stack_clean(&prec_stack);
     print_top(&prec_stack);
 
-    
-
     printf("\033[0m"); 
+
+
+    // SMALL TEST //
+    /*
+    tPrec_stack_push(&prec_stack, SYMBOL_TERMINAL, "e");
+    print_top_terminal(&prec_stack);
+    tSymbol top_term = tPrec_stack_top_term(&prec_stack);
+    char * test = top_term->str;
+
+    printf("%s\n", test);
+    */
+
     return 0;
 }
