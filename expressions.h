@@ -13,6 +13,7 @@
 
 
 #include "parser.h"
+#include "precedent_stack.h"
 
 #include <stdbool.h>
 
@@ -26,73 +27,36 @@
 typedef enum
 {
     /*  Výraz s binárním/aritmetickým/řetězcovým operátorem  */
-    RULE_SUM,       //E -> E + E
-    RULE_SUB,       //E -> E - E
-    RULE_MUL,       //E -> E * E
-    RULE_DIV_INT,   //E -> E // E
-    RULE_DIV_FLOAT, //E -> E / E
+    RULE_SUM,       //E -> E + E            //0
+    RULE_SUB,       //E -> E - E            //1
+    RULE_MUL,       //E -> E * E            //2
+    RULE_DIV_INT,   //E -> E // E           //3
+    RULE_DIV_FLOAT, //E -> E / E            //4
 
     /*  Výraz v závorkách  */
-    RULE_BRACKETS,  //E -> (E)
+    RULE_BRACKETS,  //E -> (E)              //5
     
     /*  Výraz s relačním operátorem  */
-    RULE_L,         //E -> E < E
-    RULE_G,         //E -> E > E
-    RULE_LEQ,       //E -> E <= E
-    RULE_GEQ,       //E -> E >= E
-    RULE_EQ,        //E -> E == E
-    RULE_NEQ,       //E -> E != E
+    RULE_L,         //E -> E < E            //6
+    RULE_G,         //E -> E > E            //7
+    RULE_LEQ,       //E -> E <= E           //8
+    RULE_GEQ,       //E -> E >= E           //9
+    RULE_EQ,        //E -> E == E           //10
+    RULE_NEQ,       //E -> E != E           //11
 
-    /*  Hodnota výrazu  */
-    RULE_VALUE,     //E -> value
+    /* */
+    RULE_VAL,       //E -> i                //12
+
 }Prec_rule;
 
-/**
- *
- * @enum Prec_stack_symbol.
- * @brief Typy symbolů na zásobníku precedenční analýzy.
- *
- */
 
-typedef enum
-{
-    SYMBOL_NONTERMINAL,
-    SYMBOL_TERMINAL,
-    SYMBOL_HANDLE,
-    SYMBOL_UNDEFINED,
-}Prec_stack_symbol;
+void clean_resources(tParser_data* parser_data, tPrec_stack* prec_stack);
 
+Prec_token process_terminal(tPrec_stack* prec_stack);
 
-typedef enum
-{
-   PREC_PLUS_MINUS,     // +-
-   PREC_MUL_DIV_FLOAT,  // */
-   PREC_DIV_INT,        // //
-   PREC_L_BRACKET,      // (
-   PREC_R_BRACKET,      // )
-   PREC_RELATION_OP,    // RELATION_OP
-   PREC_VALUE,          // VALUE
-
-   PREC_OTHER,          // $
-}Prec_token;
-
-/**
- *
- * @enum Prec_derive.
- * @brief Počet symbolů potřebných k derivování aktuálního pravidla.
- *
- */
-
-typedef enum
-{
-    DERIVATION_VALUE = 1,   //E -> value
-    DERIVATION_RULE = 3,    //E -> E OP E (OP značí operátor) || (E)
-}Prec_derivation;
-
-
-
-//void clean_resources(tParser_data* parser_data, Errors err, tPrec_stack* prec_stack);
 Prec_token process_token(tParser_data* parser_data);
+
+bool process_prec_table(tParser_data* parser_data, tPrec_stack* prec_stack, Prec_token prec_term_type, Prec_token prec_token_type);
 
 bool process_expression(tParser_data* parser_data);
 
