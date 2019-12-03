@@ -87,6 +87,7 @@ void get_next_token(St_token *token, tStack* stack)
         token->error_value = clean_all(INTERNAL_ERROR, string);
         return;
     }
+    string_clear(token->attribute);
 
 
     //pokud se znak nacházíme na začátku řádku, možnost INDENTU, v případě komentáře se negeneruje
