@@ -16,7 +16,7 @@ char prec_table[7][7] =
     {']', ']', '[', ']', ']', '[', ']'},   // */ //
     {'[', '[', '[', '=', '[', '[', 'U'},   // (
     {']', ']', 'U', ']', ']', 'U', ']'},   // )
-    {'[', '[', '[', ']', ']', '[', ']'},   // RELATION_OP
+    {'[', '[', '[', ']', 'U', '[', ']'},   // RELATION_OP
     {']', ']', 'U', ']', ']', 'U', ']'},   // VALUE
     {'[', '[', '[', 'U', '[', '[', 'U'},   // $
 };
@@ -158,6 +158,15 @@ bool process_prec_table(tParser_data* parser_data, tPrec_stack* prec_stack, Prec
             return true;
 
         case '[':
+
+            //kontrola zda se nesnažíme o vložení samostatného operátoru mezi závorky
+        
+            if ((prec_stack->top->value_type == TOKEN_LEFT_BRACKET) && (prec_token_type != PREC_VALUE))
+            {
+                set_error_code(parser_data, SYNTAX_ERROR);
+                return false;
+            }
+
             if (!tPrec_stack_push_handle(prec_stack))
             {
                 set_error_code(parser_data, INTERNAL_ERROR);
@@ -193,6 +202,15 @@ bool process_prec_table(tParser_data* parser_data, tPrec_stack* prec_stack, Prec
             }
             else if(prec_stack->top->next_ptr->next_ptr->next_ptr->type == SYMBOL_HANDLE)
             {
+                Token_type leftmost = prec_stack->top->next_ptr->next_ptr->value_type; //nejlevější hodnota pravidla pro zderivování
+                Token_type rightmost = prec_stack->top->value_type; //nejpravější hodnota pravidla pro zderivování
+                if ((leftmost != UNDEFINED) && (leftmost != TOKEN_LEFT_BRACKET) && (rightmost != UNDEFINED) && (rightmost != TOKEN_RIGHT_BRACKET))
+                {
+                    set_error_code(parser_data, SYNTAX_ERROR);
+                    return false;
+                }
+                
+
                 tPrec_stack_pop_handle(prec_stack, DERIVATION_RULE);
 
                 if(!tPrec_stack_push(prec_stack, SYMBOL_NONTERMINAL, UNDEFINED, "E")) //internal error, pokud se symbol nepodaří vložit na zásobník
@@ -253,13 +271,15 @@ bool process_expression(tParser_data* parser_data)
     //  TOP TERMINÁL  //    
     tSymbol term = tPrec_stack_top_term(&prec_stack);
 
-    if ((!strcmp(term->attribute->str, "$")) && (prec_token_type == PREC_OTHER))
+    //Na vstupu je symbol, jímž výraz nemůže začínat, chyba
+    if (((!strcmp(term->attribute->str, "$")) && (prec_token_type == PREC_OTHER)) || ((prec_token_type != PREC_VALUE) && (prec_token_type != PREC_L_BRACKET)))
     {
         clean_resources(parser_data, &prec_stack);
         set_error_code(parser_data, SYNTAX_ERROR);
         return false;
     }
 
+    //načítání symbolů ze vstupu a zpracování výrazu
     do
     {
         if (process_prec_table(parser_data, &prec_stack, prec_term_type, prec_token_type))
@@ -274,6 +294,9 @@ bool process_expression(tParser_data* parser_data)
             return false;
         }
     } while ((strcmp(term->attribute->str, "$") != 0) || (prec_token_type != PREC_OTHER));
+
+
+
 
     clean_resources(parser_data, &prec_stack);
     return true;
