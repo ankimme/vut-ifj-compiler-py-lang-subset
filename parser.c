@@ -276,11 +276,28 @@ bool prog(tParser_data *parser_data)
     {
         return true;
     }
-    else
+    // token je pravdepodobne expression -> pravidlo 1
+    else // TODO expr
     {
-        set_error_code(parser_data, 2);
-        return false;
+        // musi nasledovat neterminal SEQUENCE
+        // get_token_and_set_error_code(parser_data); DELETE
+        if (!sequence(parser_data))
+        {
+            return false;
+        }
+
+        // musi nasledovat neterminal PROG
+        get_token_and_set_error_code(parser_data);
+        if (!prog(parser_data))
+        {
+            return false;
+        }
     }
+    // else DELETE
+    // {
+    //     set_error_code(parser_data, 2);
+    //     return false;
+    // }
     
     return true;
 }
@@ -426,11 +443,28 @@ bool statements(tParser_data *parser_data)
 
         return true;
     }
+    // token je pravdepodobne expression -> pravidlo 14
     else
     {
-        set_error_code(parser_data, 2);
-        return false;
+        // musi nasledovat neterminal SEQUENCE
+        // get_token_and_set_error_code(parser_data); DELETE
+        if (!sequence(parser_data))
+        {
+            return false;
+        }
+
+        // musi nasledovat neterminal SEQUENCE_N
+        get_token_and_set_error_code(parser_data);
+        if (!sequence_n(parser_data))
+        {
+            return false;
+        }
     }
+    // else DELETE
+    // {
+    //     set_error_code(parser_data, 2);
+    //     return false;
+    // }
 
     return true;
 }
@@ -532,7 +566,12 @@ bool sequence(tParser_data *parser_data)
         // token je "while" -> pravidlo 11
         else if (strcmp(parser_data->current_token->attribute->str, "while") == 0)
         {
-            // TODO expr
+            // musi nasledovat expression
+            get_token_and_set_error_code(parser_data);
+            if (!process_expression(parser_data))
+            {
+                return false;
+            }
 
             // musi nasledovat ":"
             if (!get_compare_check(parser_data, TOKEN_COLON))
@@ -596,11 +635,30 @@ bool sequence(tParser_data *parser_data)
             return false;
         }
     }
+    // TODO expr
+    // token je pravdepodobne expression -> pravidlo 9
     else
     {
-        set_error_code(parser_data, 2);
-        return false;
+        // musi nasledovat expression
+        // get_token_and_set_error_code(parser_data); DELETE
+        if (!process_expression(parser_data))
+        {
+            return false;
+        }
+
+        // musi nasledovat "EOL" nebo "EOF"
+        get_token_and_set_error_code(parser_data);
+        // if (!get_compare_check(parser_data, TOKEN_EOL)) DELETE
+        if (parser_data->current_token->type != TOKEN_EOL && parser_data->current_token->type != TOKEN_EOF)
+        {
+            return false;
+        }
     }
+    // else DELETE
+    // {
+    //     set_error_code(parser_data, 2);
+    //     return false;
+    // }
 
     return true;
 }
@@ -664,11 +722,22 @@ bool sequence_n(tParser_data *parser_data)
     // {
     //     return true;
     // }
+    // TODO expr
+    // token je pravdepodobne expression -> pravidlo 16
     else
     {
-        set_error_code(parser_data, 2);
-        return false;
+        // musi nasledovat neterminal STATEMENTS
+        // get_token_and_set_error_code(parser_data); DELETE
+        if (!statements(parser_data))
+        {
+            return false;
+        }
     }
+    // else DELETE
+    // {
+    //     set_error_code(parser_data, 2);
+    //     return false;
+    // }
 
     return true;
 }
@@ -687,7 +756,7 @@ bool func_return(tParser_data *parser_data)
         // token je "return" -> pravidlo 35
         if (strcmp(parser_data->current_token->attribute->str, "return") == 0 && parser_data->function_definition_scope)
         {
-            // musi nasledovat neterminal RETURN
+            // musi nasledovat neterminal RETURN_VALUE
             get_token_and_set_error_code(parser_data);
             if (!return_value(parser_data))
             {
@@ -723,11 +792,27 @@ bool return_value(tParser_data *parser_data)
         // parser_data->unget_token = true; DELETE
         return true;
     }
+    // token je pravdepodobne expression -> pravidlo 37
     else
     {
-        set_error_code(parser_data, 2);
-        return false;
+        // musi nasledovat expression
+        // get_token_and_set_error_code(parser_data); DELETE
+        if (!process_expression(parser_data))
+        {
+            return false;
+        }
+
+        // musi nasledovat "EOL"
+        if (!get_compare_check(parser_data, TOKEN_EOL))
+        {
+            return false;
+        }
     }
+    // else TODO / overit funkcnost, jestli expressions opravdu prekouse jakoukoliv blbost / DELETE
+    // {
+    //     set_error_code(parser_data, 2);
+    //     return false;
+    // }
 
     return true;
 }
@@ -807,11 +892,22 @@ bool instruct_continue(tParser_data *parser_data)
             return false;
         }
     }
+    // TODO expr
+    // token je pravdepodobne expression -> pravidlo 21
     else
     {
-        set_error_code(parser_data, 2);
-        return false;
+        // musi nasledovat neterminal EXPRESSION
+        // get_token_and_set_error_code(parser_data);
+        if (!process_expression(parser_data))
+        {
+            return false;
+        }
     }
+    // else DELETE
+    // {
+    //     set_error_code(parser_data, 2);
+    //     return false;
+    // }
 
     return true;
 }
