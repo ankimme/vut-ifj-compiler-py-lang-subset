@@ -189,7 +189,7 @@ bool process_prec_table(tParser_data* parser_data, tPrec_stack* prec_stack, Prec
 
         case ']':
 
-            if (prec_stack->top->next_ptr->type == SYMBOL_HANDLE)
+            if ((prec_stack->top->next_ptr->type == SYMBOL_HANDLE) && (prec_term_type == PREC_VALUE))
             {
                 tPrec_stack_pop_handle(prec_stack, DERIVATION_VALUE);
                 if(!tPrec_stack_push(prec_stack, SYMBOL_NONTERMINAL, UNDEFINED, "E")) //internal error, pokud se symbol nepodaří vložit na zásobník
