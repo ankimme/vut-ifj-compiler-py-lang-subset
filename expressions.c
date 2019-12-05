@@ -246,8 +246,6 @@ bool process_expression(tParser_data* parser_data)
         return false;  
     }
 
-    parser_data->unget_token = false;
-
     /***********************/
     /*  ZPRACOVÁNÍ VÝRAZU  */
     /***********************/
