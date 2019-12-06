@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "dynamic_string.h"
 
 // @def Velikost hash tabulky
 #define HT_SIZE 1171
@@ -23,29 +24,42 @@
 #define HT_STACK_SIZE 500
 
 /* klíč záznamu v tabulce symbolů */
-typedef char* tKey;
+typedef dynamic_string* tKey;
 
-// typedef struct DELETE
-// {
-// 	int a;
-// } tData_Function;
-
-// typedef struct DELETE
-// {
-// 	double a;
-// } tData_Variable;
-
-/* typ obsahu (například cena zboží) */
-typedef struct tData
+typedef struct
 {
-	int number;
-} tData;
+	int a;
+} tFunctionData;
 
-/*Datová položka HT s explicitně řetězenými synonymy*/
+typedef struct
+{
+	int a;
+} tVariableData;
+
+typedef struct tNodeData
+{
+	int a;
+	struct tNodeData *lptr;
+	struct tNodeData *rptr;
+} tNodeData;
+
+/* typ obsahu */
+typedef enum
+{
+	HT_TYPE_VARIABLE,
+	HT_TYPE_FUNCTION,
+	HT_TYPE_NODE,
+} tHTType;
+
+/* Datová položka HT s explicitně řetězenými synonymy*/
  typedef struct tHash_Table_Item
  {
-	tKey key;				/* klíč  */
-	tData data;				/* obsah */
+	tKey key; // klíč
+	tHTType type; // typ
+	// data
+	tFunctionData *fun_data;
+	tVariableData *var_data;
+	tNodeData *node_data;
 	struct tHash_Table_Item* next_item;	/* ukazatel na další synonymum */
 } tHash_Table_Item;
 
@@ -90,10 +104,12 @@ void st_dedent (tSymtable *symtable);
  * @param symtable Vstupní tabulka symbolů 
  * @post 
  */
-void st_insert_entry_in_current_context (tSymtable *symtable, tKey key, tData data);
+void st_insert_entry_in_current_context (tSymtable *symtable, tKey key, void *data, tHTType type);
+
+tHash_Table_Item* st_insert_entry_in_current_context_random_key (tSymtable *symtable, void *data, tHTType type);
 
 // TODO
-tData* st_search_entry (tSymtable *symtable, tKey key);
+tHash_Table_Item* st_search_entry (tSymtable *symtable, tKey key);
 
 /**
  * Uvolneni tabulky symbolu z pameti
@@ -123,6 +139,8 @@ void ht_init (tHash_Table* hash_table);
  */
 void ht_clean (tHash_Table* hash_table);
 
+void ht_item_clean ( tHash_Table_Item* item );
+
 /**
  * Vyhledání položky v hash tabulce na základě klíče
  * 
@@ -151,6 +169,9 @@ tHash_Table_Item* ht_search (tHash_Table* hash_table, tKey key);
 // void htDelete ( tHash_Table* ptrht, tKey key );
 
 // void htClearAll ( tHash_Table* ptrht );
+
+
+tKey st_generate_random_key();
 
 int st_generate_hash(tKey key);
 

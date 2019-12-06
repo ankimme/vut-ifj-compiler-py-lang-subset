@@ -73,14 +73,44 @@ void st_dedent (tSymtable *symtable)
     symtable->top--;
 }
 
-void st_insert_entry_in_current_context (tSymtable *symtable, tKey key, tData data)
+void st_insert_entry_in_current_context (tSymtable *symtable, tKey key, void *data, tHTType type)
 {
     tHash_Table *hash_table = symtable->HT_array[symtable->top];
 
     tHash_Table_Item* item = ht_search(hash_table, key);
     if (item != NULL) // pokud existuje polozka se stejnym klicem, jednoducse prepise jeji data
     {
-        item->data = data;
+        switch (type)
+        {
+            case HT_TYPE_VARIABLE:
+                if (!item->var_data)
+                {
+                    // raise error
+                    return;
+                }
+                item->var_data = (tVariableData*) data;
+                break;
+            case HT_TYPE_FUNCTION:
+                if (!item->fun_data)
+                {
+                    // raise error
+                    return;
+                }
+                item->fun_data = (tFunctionData*) data;
+                break;
+            case HT_TYPE_NODE:
+                if (!item->node_data)
+                {
+                    // raise error
+                    return;
+                }
+                item->node_data = (tNodeData *) data;
+                break;
+            default:
+                // todo raise error 99
+                break;
+        }
+        item->type = type;
         return;
     }
     
@@ -92,31 +122,63 @@ void st_insert_entry_in_current_context (tSymtable *symtable, tKey key, tData da
         // TODO RAISE MALLOC ERROR
         return;
     }
-    new_item->key = key;
-    new_item->data = data;
+    // new_item->key todo
+    new_item->key = key; //DELETE
+    switch (type)
+    {
+        case HT_TYPE_VARIABLE:
+                new_item->var_data = (tVariableData*) data;
+                new_item->fun_data = NULL;
+                new_item->node_data = NULL;
+            break;
+        case HT_TYPE_FUNCTION:
+                new_item->fun_data = (tFunctionData*) data;
+                new_item->var_data = NULL;
+                new_item->node_data = NULL;
+            break;
+        case HT_TYPE_NODE:
+                new_item->node_data = (tNodeData *) data;
+                new_item->var_data = NULL;
+                new_item->fun_data = NULL;
+            break;
+        default:
+            // todo raise error 99
+            break;
+    }
+    new_item->type = type;
     new_item->next_item = (*hash_table)[hash];
     (*hash_table)[hash] = new_item;
 
     return;
 }
 
-tData* st_search_entry (tSymtable *symtable, tKey key)
+tHash_Table_Item* st_insert_entry_in_current_context_random_key (tSymtable *symtable, void *data, tHTType type)
+{
+    tKey key = st_generate_random_key();
+    st_insert_entry_in_current_context (symtable, key, data, type);
+    tHash_Table_Item *item = st_search_entry(symtable, key);
+    return item;
+}
+
+
+tHash_Table_Item* st_search_entry (tSymtable *symtable, tKey key)
 {
 
     tHash_Table_Item* item;
+    int hash = st_generate_hash(key);
 
     for (int i = symtable->top; i >= 0; i--)
     {
         tHash_Table *hash_table = symtable->HT_array[i];
-        int hash = st_generate_hash(key);
+        // int hash = st_generate_hash(key); // delete
         item = (*hash_table)[hash]; // prvni polozka v zretezenem seznamu
 
         // prohledani zretezeneho seznamu
         while (item != NULL)
         {
-            if (!strcmp(item->key, key))
+            if (!strcmp(item->key->str, key->str))
             {
-                return &(item->data);
+                return item;
             }
             item = item->next_item;
         }
@@ -159,12 +221,34 @@ void ht_clean ( tHash_Table* hash_table )
         while(item != NULL)
         {
             next_item = item->next_item;
+            ht_item_clean(item);
             free(item);
             item = next_item;
         }
         (*hash_table)[i] = NULL;
     }
 }
+
+void ht_item_clean ( tHash_Table_Item* item )
+{
+    //  uvolneni klice
+    string_free(item->key);
+    free(item->key);
+    item->key = NULL;
+
+    // uvolneni fun_data
+    free(item->fun_data);
+    item->fun_data = NULL;
+
+    // uvolneni var_data
+    free(item->var_data);
+    item->var_data = NULL;
+
+    // uvolneni node_data
+    free(item->node_data);
+    item->node_data = NULL;
+}
+
 
 tHash_Table_Item* ht_search ( tHash_Table* hash_table, tKey key )
 {
@@ -176,7 +260,7 @@ tHash_Table_Item* ht_search ( tHash_Table* hash_table, tKey key )
     // prohledani zretezeneho seznamu
     while (item != NULL)
     {
-        if (!strcmp(item->key, key))
+        if (!strcmp(item->key->str, key->str))
         {
             return item;
         }
@@ -297,11 +381,23 @@ tHash_Table_Item* ht_search ( tHash_Table* hash_table, tKey key )
 // */
 
 
+tKey st_generate_random_key()
+{
+    tKey key = malloc(sizeof(dynamic_string));
+    string_init(key);
+    const char symbols[] = "abcdefghijklmnopqrstuvwxyz0123456789";
+    int symbol_count = strlen(symbols);
+    for (int i = 0; i < 127; i++)
+    {
+        string_add_char(key, symbols[rand() % symbol_count]);
+    }
+    return key;
+}
 
 int st_generate_hash(tKey key)
 {
     unsigned long hash = 1, pow;
-    const int len_s = strlen(key);
+    const int len_s = strlen(key->str);
     int loop_stop = ((len_s * len_s) % 500) + 5;
 
     for (int i = 0; i < loop_stop; i++)
@@ -309,7 +405,7 @@ int st_generate_hash(tKey key)
         pow = 2;
         for (int j = 0; j < len_s; j++)
         {
-            pow *= key[j] * (i + 1);
+            pow *= key->str[j] * (i + 1);
         }
         hash += pow;
     }
