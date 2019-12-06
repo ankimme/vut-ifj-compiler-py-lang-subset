@@ -12,6 +12,7 @@
 #define PRECEDENT_STACK_H
 
 #include "dynamic_string.h"
+#include "symtable.h"
 #include "scanner.h"
 
 /**
@@ -67,6 +68,7 @@ typedef struct symbol
     Token_type value_type;
     int retype;
     dynamic_string* attribute;
+    tHash_Table_Item* item;
     struct symbol *next_ptr;
 }*tSymbol;
 
