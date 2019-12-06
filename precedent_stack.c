@@ -36,6 +36,7 @@ int tPrec_stack_push(tPrec_stack* prec_s, Prec_stack_symbol type, Token_type val
     {
         new_symbol->type = type;
         new_symbol->value_type = value_type;
+        new_symbol->retype = 0;
         new_symbol->attribute = malloc(sizeof(dynamic_string));
         string_init(new_symbol->attribute);
         if (!string_append(new_symbol->attribute, string))

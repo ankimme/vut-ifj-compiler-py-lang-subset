@@ -65,6 +65,7 @@ typedef struct symbol
 {
     Prec_stack_symbol type;
     Token_type value_type;
+    int retype;
     dynamic_string* attribute;
     struct symbol *next_ptr;
 }*tSymbol;
