@@ -38,6 +38,10 @@ int tPrec_stack_push(tPrec_stack* prec_s, Prec_stack_symbol type, Token_type val
         new_symbol->value_type = value_type;
         new_symbol->retype = 0;
         new_symbol->attribute = malloc(sizeof(dynamic_string));
+        if (new_symbol->attribute == NULL) //chyba v alokaci
+        {
+            return 0;
+        }
         string_init(new_symbol->attribute);
         if (!string_append(new_symbol->attribute, string))
         {
@@ -105,6 +109,10 @@ int tPrec_stack_push_handle(tPrec_stack* prec_s)
                 new_symbol->type = SYMBOL_HANDLE;
                 new_symbol->value_type = UNDEFINED;
                 new_symbol->attribute = malloc(sizeof(dynamic_string));
+                if (new_symbol->attribute == NULL) //chyba v alokaci
+                {
+                    return 0;
+                }
                 string_init(new_symbol->attribute);
 
                 if (!string_append(new_symbol->attribute, "["))
