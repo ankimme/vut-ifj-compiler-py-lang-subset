@@ -28,7 +28,7 @@ clean:
 	rm -f *.out *.o $(PROJECT) $(TEST_FILES)
 
 symtable_test: symtable.c $(TEST_FOLDER)/symtable_test.c
-	$(CC) $(CFLAGS) $(DFLAGS) -o $@ symtable.c $(TEST_FOLDER)/$@.c $(LFLAGS)
+	$(CC) $(CFLAGS) $(DFLAGS) -o $@ symtable.c $(TEST_FOLDER)/$@.c dynamic_string.c $(LFLAGS)
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./$@
 
 scanner_test: scanner.c $(TEST_FOLDER)/scanner_test.c
