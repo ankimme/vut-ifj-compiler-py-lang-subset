@@ -1,7 +1,6 @@
 /*
  * @file stack.h
  * @brief Implementace pomocného zásobníku
- * @author Matej Alexej Helc (xhelcm00@stud.fit.vutbr.cz)
  * @author Andrea Chimenti (xchime00@stud.fit.vutbr.cz)
  * @date 26.11.2019
  *
