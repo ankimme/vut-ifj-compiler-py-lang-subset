@@ -8,228 +8,257 @@
  * VUT FIT
  */
 
-
 #include "gen_code.h"
-
 
 void generate_build_in_functions() 
 {
-
-	PRINT_INSTRUCTION(INPUTS)
-	PRINT_INSTRUCTION(INPUTI)
-	PRINT_INSTRUCTION(INPUTF)
-	PRINT_INSTRUCTION(CHAR)
-	PRINT_INSTRUCTION(LENGTH)
-	PRINT_INSTRUCTION(PRINT)
+	printf("%s", INPUTS);
+	printf("%s", INPUTI);
+	printf("%s", INPUTF);
+	printf("%s", CHAR);
+	printf("%s", LENGTH);
+	printf("%s", PRINT);
+	printf("%s", ORD);
+	printf("%s", SUBSTRING);
 
 }
 
 void generate_header() 
 {
-	PRINT_INSTRUCTION(HEADER)
+	printf("%s", HEADER);
 }
-
 
 void start_generating()
-{
-	string_init(gen_code_string);
+{	
 	generate_header();
 	generate_build_in_functions();
-
-}
-
-void start_clearing_generator()
-{
-	string_free(gen_code_string);
-}
-
-void print_code()
-{
-	printf("%s", gen_code_string->str);
 }
 
 void generate_main_header()
 {
-	PRINT_INSTRUCTION("LABEL _main");
-	PRINT_INSTRUCTION("CREATEFRAME");
-	PRINT_INSTRUCTION("PUSHFRAME");
+	printf("%s","LABEL _main");
+	printf("%s","CREATEFRAME");
+	printf("%s","PUSHFRAME");
 }
 
 void generate_main_footer() 
 {
-	PRINT_INSTRUCTION("POPFRAME");
-	PRINT_INSTRUCTION("CLEARS");
-
+	printf("%s", "POPFRAME");
+	printf("%s", "CLEARS");
 }
 
-
-void generate_function_start(char * function_name)
+void generate_function_start(char* function_name)
 {
-	PRINT_CODE("LABEL ");
-	PRINT_CODE(function_name);
-	PRINT_CODE("\n");
-	PRINT_INSTRUCTION("PUSHFRAME");
-
-
+	printf("%s", "LABEL _");
+	printf("%s", function_name);
+	printf("%s", "\n");
+	printf("%s", "CREATEFRAME");
+	printf("%s", "PUSHFRAME");
 }
 
 void generate_function_end(char* function_name)
 {
-	PRINT_CODE("LABEL ");
-	PRINT_CODE(function_name);
-	PRINT_CODE("return");
-	PRINT_CODE("\n");
-	PRINT_CODE("POPFRAME");
-	PRINT_CODE("RETURN");
-
-
+	printf("%s", "LABEL _");
+	printf("%s", function_name);
+	printf("%s", "return");
+	printf("%s", "\n");
+	printf("%s", "POPFRAME");
+	printf("%s", "RETURN");
 }
 
 void generate_call_for_function(char* function_name)
 {
-
-	PRINT_CODE("CALL ");
-	PRINT_CODE(function_name);
-	PRINT_CODE("\n");
-
-
+	printf("%s", "CALL _");
+	printf("%s", function_name);
+	printf("%s", "\n");
 }
 
-void generate_return_for_function(char* type)
+void generate_return_for_function(char* value)
 {
-	PRINT_INSTRUCTION("DEFVAR LF@return");
-	//neco tu bude jeste
-	PRINT_CODE("\n");
-
+	printf("%s", "DEFVAR LF@return");
 }
 
 void generate_variable_declaration(char* variable)
 {
-	PRINT_INSTRUCTION("DEFVAR LF@");
-	//
-	PRINT_CODE("\n");
+	printf("%s", "DEFVAR LF@");
+	printf("%s", variable);
+	printf("%s", "\n");
+}
 
+void generate_value_type(int type)
+{
+	switch (type)
+	{
+	case 1:
+		printf("%s", "int@");
+		printf("%s", "\n");
+		return;
+	case 2:
+		printf("%s", "float@");
+		printf("%s", "\n");
+		return;
+	case 3:
+		printf("%s", "string@");
+		printf("%s", "\n");
+		return;
+	}
+}
+
+void generate_func_variables(char* name, char*value)
+{
+	generate_variable_declaration(name);
+	printf("%s", "MOVE LF@");
+	printf("%s", name);
+	printf("%s", "LF@");
+	printf("%s", value);
+	printf("%s", "\n");
+	
 }
 
 void generate_label(char* label)
 {
-	PRINT_CODE("LABEL ");
-	PRINT_CODE(label);
+	printf("%s", "LABEL _");
+	printf("%s", label);
 }
 
-void generate_expr_if() 
+void conv_int_to_float(char* value_in_register)
 {
-	PRINT_CODE("JUMPIF");
-
+	printf("%s", "INT2FLOAT TF@");
+	printf("%s", value_in_register);
+	printf("%s", " TF@");
+	printf("%s", value_in_register);
+	printf("%s", "\n");
 }
 
-void generate_value(int type)
+void conv_float_to_int(char* value_in_register)
 {
-
-	switch (type)
-	{
-		case 1:
-			PRINT_CODE("int@");
-			PRINT_CODE("\n");
-			return;
-
-		case 2:
-			PRINT_CODE("float@");
-			PRINT_CODE("\n");
-			return;
-
-		case 3:
-			PRINT_CODE("string@");
-			PRINT_CODE("\n");
-			return;
-
-	}
-
+	printf("%s", "FLOAT2INT TF@");
+	printf("%s", value_in_register);
+	printf("%s", " TF@");
+	printf("%s", value_in_register);
+	printf("%s", "\n");
 }
 
-void generate_concat() 
+void conv_int_to_float_stack()
 {
-	PRINT_INSTRUCTION("POPS GF@tmp2");
-	PRINT_INSTRUCTION("POPS GF@tmp1");
-	PRINT_INSTRUCTION("CONCAT GF@result GF@temp1 GF@temp2");
-	PRINT_INSTRUCTION("PUSHS GF@result");
+	printf("%s", "INT2FLOATS");
 }
 
-void generate_adds() 
+void conv_float_to_int_stack()
 {
-	PRINT_INSTRUCTION("ADDS");
+	printf("%s", "FLOAT2INTS");
 }
 
-void generate_subs() 
+void conv_int_to_float_stack_2()
 {
-	PRINT_INSTRUCTION("SUBS");
+	printf("%s", "POPS GF@variable1");
+	printf("%s", "INT2FLOATS");
+	printf("%s", "PUSHS GF@variable1");
 }
 
-void generate_muls() 
+void conv_float_to_int_stack_2()
 {
-	PRINT_INSTRUCTION("MULS");
+	printf("%s", "POPS GF@variable1");
+	printf("%s", "FLOAT2INTS");
+	printf("%s", "PUSHS GF@variable1");
 }
 
-void generate_divs() 
+void generate_concat()
 {
-	PRINT_INSTRUCTION("DIVS");
+	printf("%s", "POPS GF@variable1");
+	printf("%s", "POPS GF@variable2");
+	printf("%s", "CONCAT GF@result GF@variable2 GF@variable1");
+	printf("%s", "PUSHS GF@result");
 }
 
-void generate_idivs() 
+void generate_print()
 {
-	PRINT_INSTRUCTION("POPS GF@temp1");
-	PRINT_INSTRUCTION("INT2FLOATS");
-	PRINT_INSTRUCTION("PUSHS GF@temp2");
-	PRINT_INSTRUCTION("INT2FLOATS");
-	PRINT_INSTRUCTION("DIVS");
-	PRINT_INSTRUCTION("FLOAT2INTS");
-
-
-}
-
-void generate_EQS() 
-{
-	PRINT_INSTRUCTION("EQS");
-}
-
-void generate_GTS()
-{
-	PRINT_INSTRUCTION("GTS");
-}
-
-void generate_LTS()
-{
-	PRINT_INSTRUCTION("LTS");
-}
-
-void generate_convert_to_double()
-{
-	PRINT_INSTRUCTION("INT2FLOATS");
-
-}
-
-void generate_convert_to_int()
-{
-	PRINT_INSTRUCTION("FLOAT2INT");
+	printf("%s", "WRITE GF@variable");
 }
 
 void generate_pushs(char* variable)
 {
-	PRINT_CODE("PUSHS ");
-	PRINT_CODE(variable);
-	PRINT_CODE("\n");
+	printf("%s", "PUSHS ");
+	printf("%s", variable);
+	printf("%s", "\n");
 }
 
 void generate_pops()
 {
-	PRINT_INSTRUCTION("POPS  GF@return");
+	printf("%s", "POPS  GF@return");
 }
 
-void generate_if_statement(char *label)
+void generate_adds()
 {
-	PRINT_CODE("JUMPIFEQ ");
-	PRINT_CODE(label);
-	PRINT_CODE("_else GF@%result bool@false\n");
-
+	printf("%s", "ADDS");
 }
 
+void generate_subs()
+{
+	printf("%s", "SUBS");
+}
+
+void generate_muls()
+{
+	printf("%s", "MULS");
+}
+
+void generate_divs()
+{
+	printf("%s", "DIVS");
+}
+
+void generate_idivs()
+{
+	printf("%s", "POPS GF@variable1");
+	printf("%s", "INT2FLOATS");
+	printf("%s", "PUSHS GF@variable2");
+	printf("%s", "INT2FLOATS");
+	printf("%s", "DIVS");
+	printf("%s", "FLOAT2INTS");
+}
+
+void generate_EQS()
+{
+	printf("%s", "EQS");
+}
+
+void generate_GTS()
+{
+	printf("%s", "GTS");
+}
+
+void generate_LTS()
+{
+	printf("%s", "LTS");
+}
+
+void if_statement(char* function)
+{
+	printf("%s", "JUMPIFEQ _");
+	printf("%s", function);
+	printf("%s", "GF@result GF@comp_variable");
+	printf("%s", "\n");
+}
+
+void if_else_statement(char* function)
+{
+	printf("%s", "JUMP _");
+	printf("%s", function);
+	printf("%s", "\n");
+}
+
+void while_statement(char* function)
+{
+	printf("%s", "JUMPIFEQ _");
+	printf("%s", function);
+	printf("%s", "GF@result GF@comp_variable");
+	printf("%s", "\n");
+}
+
+void while_end_statement(char* function)
+{
+	printf("%s", "JUMP _");
+	printf("%s", function);
+	printf("%s", "\n");
+}

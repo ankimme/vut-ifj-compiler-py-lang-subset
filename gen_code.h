@@ -8,25 +8,18 @@
  * VUT FIT
  */
 
-#include "dynamic_string.h"
+#ifndef GEN_CODE_H
+#define GEN_CODE_H
+
 #include <stdio.h>
-
-
-dynamic_string * gen_code_string;
-
-#define PRINT_INSTRUCTION(inst) \
-	string_append(gen_code_string, (inst "\n"));
-
-#define PRINT_CODE(code) \
-	string_append(gen_code_string, (code));
-
 
 #define HEADER \
 	".IFJcode19\n"\
 	"JUMP _main\n" \
+	"LABEL _main\n"\
 
 #define INPUTS \
-	"LABEL inputs\n" \
+	"LABEL _inputs\n" \
 	"PUSHFRAME\n" \
 	"DEFVAR LF@line\n" \
 	"READ LF@line string\n" \
@@ -34,7 +27,7 @@ dynamic_string * gen_code_string;
 	"RETURN\n" \
 
 #define INPUTI \
-	"LABEL inputs\n" \
+	"LABEL _inputs\n" \
 	"PUSHFRAME\n" \
 	"DEFVAR LF@line\n" \
 	"READ LF@line int\n" \
@@ -42,7 +35,7 @@ dynamic_string * gen_code_string;
 	"RETURN\n" \
 
 #define INPUTF \
-	"LABEL inputs\n" \
+	"LABEL _inputs\n" \
 	"PUSHFRAME\n" \
 	"DEFVAR LF@line\n" \
 	"READ LF@line float\n" \
@@ -50,45 +43,60 @@ dynamic_string * gen_code_string;
 	"RETURN\n" \
 
 #define CHAR \
-	"LABEL chr\n" \
+	"LABEL _chr\n" \
 	"PUSHFRAME\n" \
 	"DEFVAR LF@type\n"\
 	"DEFVAR LF@return\n"\
 	"TYPE LF@type LF@input\n"\
 	"JUMPIFEQ chr_continue LF@type int\n"\
 	"EXIT int@4\n"\
-	"LABEL chr_continue\n"\
+	"LABEL _chr_continue\n"\
 	"INT2CHAR LF@return LF@input\n"\
 	"POPFRAME\n"\
 	"RETURN\n"\
 
 #define LENGTH \
-	"LABEL length\n" \
+	"LABEL _length\n" \
 	"PUSHFRAME\n" \
-	"DEFVAR LF@line_length\n" \
-	"STRLEN LF@line_length LF@input\n" \
+	"STRLEN GF@return LF@input\n" \
 	"POPFRAME\n" \
-	"RETURN\n" \
+	"RETURN\n"\
 
 #define ORD \
-	"LABEL ord\n" \
-	"PUSHFRAME\n" \
-	"DEFVAR LF@line_length\n" \
-	"CREATEFRAME\n" \
-	"DEFVAR TF@temp\n"\
-	"MOVE TF@temp LF@input\n"\
-	"CALL length\n" \
-	"MOVE LF@line_length  GF@return\n"\
-	"STRI2INT GF@return LF@input LF@0\n"\
-	"POPFRAME\n" \
-	"RETURN\n" \
+	"LABEL _ord\n"\
+	"PUSHFRAME\n"\
+	"DEFVAR LF@return\n"\
+	"TYPE GF@type LF@variable2\n"\
+	"JUMPIFEQ ord_continue LF@type int\n"\
+	"EXIT int@4\n"\
+	"LABEL _ord_continue\n"\
+	"DEFVAR LF@length\n"\
+	"CREATEFRAME\n"\
+	"DEFVAR TF@variable1\n"\
+	"MOVE TF@variable1 LF@variable1\n"\
+	"CALL _length\n"\
+	"MOVE LF@length TF@return\n"\
+	"CLEARS\n"\
+	"PUSHS LF@variable2\n"\
+	"PUSHS LF@input\n"\
+	"LTS\n"\
+	"PUSHS LF@variable2\n"\
+	"PUSHS LF@length\n"\
+	"LTS\n"\
+	"NOTS\n"\
+	"ORS\n"\
+	"POPS TF@return\n"\
+	"JUMPIFEQ _ord_end TF@return bool@true\n"\
+	"STRI2INT LF@$return LF@variable1 LF@variable2\n"\
+	"LABEL _ord_end\n"\
+	"POPFRAME\n"\
+	"RETURN\n"\
 
-
-//#define SUBSTRING
-
+#define SUBSTRING \
+	"LABEL _substring\n"\
 
 #define PRINT \
-	"LABEL print\n" \
+	"LABEL _print\n" \
 	"PUSHFRAME\n" \
 	"WRITE LF@input\n" \
 	"POPFRAME\n" \
@@ -98,12 +106,7 @@ void generate_build_in_functions();
 
 void generate_header();
 
-
 void start_generating();
-
-void start_clearing_generator();
-
-void print_code();
 
 void generate_main_header();
 
@@ -115,17 +118,35 @@ void generate_function_end(char* function_name);
 
 void generate_call_for_function(char* function_name);
 
-void generate_return_for_function(char* type);
+void generate_return_for_function(char* value);
 
 void generate_variable_declaration(char* variable);
 
+void generate_value_type(int type);
+
+void generate_func_variables(char* name, char* value);
+
 void generate_label(char* label);
 
-void generate_expr_if();
+void conv_int_to_float(char* value_in_register);
 
-void generate_value(int type);
+void conv_float_to_int(char* value_in_register);
+
+void conv_int_to_float_stack();
+
+void conv_float_to_int_stack();
+
+void conv_int_to_float_stack_2();
+
+void conv_float_to_int_stack_2();
 
 void generate_concat();
+
+void generate_print();
+
+void generate_pushs(char* variable);
+
+void generate_pops();
 
 void generate_adds();
 
@@ -143,12 +164,12 @@ void generate_GTS();
 
 void generate_LTS();
 
-void generate_convert_to_double();
+void if_statement(char* function);
 
-void generate_convert_to_int();
+void if_else_statement(char* function);
 
-void generate_pushs(char* variable);
+void while_statement(char* function);
 
-void generate_pops();
+void while_end_statement(char* function);
 
-void generate_if_statement(char* label);
+#endif
