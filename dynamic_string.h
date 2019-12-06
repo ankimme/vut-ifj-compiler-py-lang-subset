@@ -1,7 +1,6 @@
 /*
  * @file dynamic_string.h
  * @brief Deklarace struktur a funkcí pro dynamic_string knihovnu
- * @author Matej Alexej Helc (xhelcm00@stud.fit.vutbr.cz)
  * @author Andrea Chimenti (xchime00@stud.fit.vutbr.cz)
  * @date 27.10.2019
  *

@@ -1,7 +1,6 @@
 /*
  * @file dynamic_string.c
  * @brief Pomocná knihovna pro tvorbu a práci s řetězci
- * @author Matej Alexej Helc (xhelcm00@stud.fit.vutbr.cz)
  * @author Andrea Chimenti (xchime00@stud.fit.vutbr.cz)
  * @date 27.10.2019
  *
