@@ -52,6 +52,14 @@ typedef enum
 
 void clean_resources(tParser_data* parser_data, tPrec_stack* prec_stack);
 
+bool derive_rule(tParser_data* parser_data, tPrec_stack* prec_stack, Token_type value_type, char* string);
+
+bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSymbol left_operand, tSymbol operator, tSymbol right_operand);
+
+bool semantic_node_value(tSymbol value);
+
+bool semantic_node_rule(tParser_data* parser_data, tPrec_stack* prec_stack, tSymbol left_sym, tSymbol middle_sym, tSymbol right_sym);
+
 Prec_token process_terminal(tPrec_stack* prec_stack);
 
 Prec_token process_token(tParser_data* parser_data);

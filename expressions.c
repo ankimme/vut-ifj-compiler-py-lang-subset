@@ -22,11 +22,374 @@ char prec_table[7][7] =
 };
 
 
+
 void clean_resources(tParser_data* parser_data, tPrec_stack* prec_stack)
 {
     tPrec_stack_clean(prec_stack);
     parser_data->unget_token = true;
 }
+
+bool derive_rule(tParser_data* parser_data, tPrec_stack* prec_stack, Token_type value_type, char* string)
+{
+    //syntaktické zderivování pravidla
+    tPrec_stack_pop_handle(prec_stack, DERIVATION_RULE);
+
+    if(!tPrec_stack_push(prec_stack, SYMBOL_NONTERMINAL, value_type, string)) //internal error, pokud se symbol nepodaří vložit na zásobník
+    {
+        set_error_code(parser_data, INTERNAL_ERROR);
+        return false;
+    }
+
+    return true;
+}
+
+
+bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSymbol left_operand, tSymbol operator, tSymbol right_operand)
+{
+    Token_type l_value = left_operand->value_type;
+    Token_type r_value = right_operand->value_type;
+    Token_type op_value = operator->value_type;
+
+    switch(op_value)
+    {
+        case TOKEN_PLUS:
+            if ((l_value == TOKEN_STRING_LITERAL) && (r_value == TOKEN_STRING_LITERAL))
+            {
+                if (!derive_rule(parser_data, prec_stack, TOKEN_STRING_LITERAL, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
+            {
+                if (!derive_rule(parser_data, prec_stack, TOKEN_INTEGER, ""))
+                {
+                    return false;
+                }
+                return true;  
+            }
+            else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
+            {
+                if (!derive_rule(parser_data, prec_stack, TOKEN_DOUBLE, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
+            {
+                //PŘETYPOVAT
+                if (l_value == TOKEN_INTEGER)
+                {
+                    left_operand->retype = 1;
+                }
+                else
+                {
+                    right_operand->retype = 1;
+                }
+                if (!derive_rule(parser_data, prec_stack, TOKEN_DOUBLE, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else
+            {
+                //nelze sčítat dané operandy, chyba
+                set_error_code(parser_data, RUNTIME_SEMANTIC_ERROR);
+                return false;
+            }
+
+        case TOKEN_MINUS:
+        case TOKEN_MULTIPLY:
+            if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
+            {
+                if (!derive_rule(parser_data, prec_stack, TOKEN_INTEGER, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
+            {
+                if (!derive_rule(parser_data, prec_stack, TOKEN_DOUBLE, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
+            {
+                //PŘETYPOVAT
+                if (l_value == TOKEN_INTEGER)
+                {
+                    left_operand->retype = 1;
+                }
+                else
+                {
+                    right_operand->retype = 1;
+                }
+
+                if (!derive_rule(parser_data, prec_stack, TOKEN_DOUBLE, ""))
+                {
+                    return false;
+                }
+                return true;
+
+            }
+            else
+            {
+                //nelze odečítat, násobit, chyba
+                set_error_code(parser_data, RUNTIME_SEMANTIC_ERROR);
+                return false;
+            }
+
+        case TOKEN_DIVIDE_INTEGER:
+            if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
+            {
+                if (!derive_rule(parser_data, prec_stack, TOKEN_INTEGER, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else
+            {
+                //lze dělit pouze celočíselné operandy
+                set_error_code(parser_data, RUNTIME_SEMANTIC_ERROR);
+                return false;
+            }
+
+        case TOKEN_DIVIDE_FLOAT:
+            if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
+            {
+                if (!derive_rule(parser_data, prec_stack, TOKEN_DIVIDE_FLOAT, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
+            {
+                if (!derive_rule(parser_data, prec_stack, TOKEN_DIVIDE_FLOAT, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
+            {
+                //PŘETYPOVAT
+                if (l_value == TOKEN_INTEGER)
+                {
+                    left_operand->retype = 1;
+                }
+                else
+                {
+                    right_operand->retype = 1;
+                }
+
+                if (!derive_rule(parser_data, prec_stack, TOKEN_DIVIDE_FLOAT, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else
+            {
+                //nelze dělit, chyba
+                set_error_code(parser_data, RUNTIME_SEMANTIC_ERROR);
+                return false;
+            }
+        case TOKEN_LESS_THAN:
+        case TOKEN_GREATER_THAN:
+        case TOKEN_LESS_OR_EQUAL:
+        case TOKEN_GREATER_OR_EQUAL:
+            if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
+            {
+                if (!derive_rule(parser_data, prec_stack, UNDEFINED, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
+            {
+                if (!derive_rule(parser_data, prec_stack, UNDEFINED, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if ((l_value == TOKEN_STRING_LITERAL) && (r_value == TOKEN_STRING_LITERAL))
+            {
+                if (!derive_rule(parser_data, prec_stack, UNDEFINED, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
+            {
+                //PŘETYPOVAT
+                if (l_value == TOKEN_INTEGER)
+                {
+                    left_operand->retype = 1;
+                }
+                else
+                {
+                    right_operand->retype = 1;
+                }
+
+                if (!derive_rule(parser_data, prec_stack, UNDEFINED, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else
+            {
+                //nelze porovnávat dané operandy, chyba
+                set_error_code(parser_data, RUNTIME_SEMANTIC_ERROR);
+                return false;
+            }
+        case TOKEN_EQUAL:
+        case TOKEN_NOT_EQUAL:
+            if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
+            {
+                if (!derive_rule(parser_data, prec_stack, UNDEFINED, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
+            {
+                if (!derive_rule(parser_data, prec_stack, UNDEFINED, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if ((l_value == TOKEN_STRING_LITERAL) && (r_value == TOKEN_STRING_LITERAL))
+            {
+                if (!derive_rule(parser_data, prec_stack, UNDEFINED, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
+            {
+                //PŘETYPOVAT
+                if (l_value == TOKEN_INTEGER)
+                {
+                    left_operand->retype = 1;
+                }
+                else
+                {
+                    right_operand->retype = 1;
+                }
+
+                if (!derive_rule(parser_data, prec_stack, UNDEFINED, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else
+            {
+                //lze porovnávat asi vše
+                if (!derive_rule(parser_data, prec_stack, UNDEFINED, ""))
+                {
+                    return false;
+                }
+                return true;
+            }
+
+
+
+        default:
+            set_error_code(parser_data, SYNTAX_ERROR);
+            return false;
+    }
+}
+
+//TODO
+bool semantic_node_value(tSymbol value)
+{
+    if (value->type == SYMBOL_TERMINAL)
+    {
+        return true;
+    }
+    return false;
+}
+
+
+bool semantic_node_rule(tParser_data* parser_data, tPrec_stack* prec_stack, tSymbol left_sym, tSymbol middle_sym, tSymbol right_sym)
+{
+    Token_type rule_type = middle_sym->value_type;
+
+    switch(rule_type)
+    {
+        case TOKEN_PLUS:
+        case TOKEN_MINUS:
+        case TOKEN_MULTIPLY:
+            if(check_operands_type(parser_data, prec_stack, left_sym, middle_sym, right_sym))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+
+        case TOKEN_DIVIDE_INTEGER:
+        case TOKEN_DIVIDE_FLOAT:
+            if(!strcmp(right_sym->attribute->str, "0"))
+            {
+                set_error_code(parser_data, DIVISION_BY_ZERO_ERROR);
+                return false;
+            }
+            else if (check_operands_type(parser_data, prec_stack, left_sym, middle_sym, right_sym))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+
+
+        case TOKEN_LESS_THAN:
+        case TOKEN_GREATER_THAN:
+        case TOKEN_LESS_OR_EQUAL:
+        case TOKEN_GREATER_OR_EQUAL:
+        case TOKEN_EQUAL:
+        case TOKEN_NOT_EQUAL:
+            if(check_operands_type(parser_data, prec_stack, left_sym, middle_sym, right_sym))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+
+        case TOKEN_IDENTIFIER:
+        case TOKEN_KEYWORD:
+        case TOKEN_INTEGER:
+        case TOKEN_DOUBLE:
+            return true;
+
+        default:
+            set_error_code(parser_data, SYNTAX_ERROR);
+            return false;
+    }
+
+}
+
 
 
 //TODO zpracování terminálu ze zásobníku a získání hodnotu z enumu pro určení indexu v tabulce
@@ -189,27 +552,52 @@ bool process_prec_table(tParser_data* parser_data, tPrec_stack* prec_stack, Prec
 
         case ']':
 
+            //pravidlo E -> i
             if ((prec_stack->top->next_ptr->type == SYMBOL_HANDLE) && (prec_term_type == PREC_VALUE))
             {
+
+                //sémantická kontrola pravidla, přetypování
+
+                if (!semantic_node_value(prec_stack->top))
+                {
+                    return false;
+                }
+
+                //zpracování pravidla
+
                 tPrec_stack_pop_handle(prec_stack, DERIVATION_VALUE);
-                if(!tPrec_stack_push(prec_stack, SYMBOL_NONTERMINAL, UNDEFINED, "E")) //internal error, pokud se symbol nepodaří vložit na zásobník
+                //internal error, pokud se symbol nepodaří vložit na zásobník
+                if(!tPrec_stack_push(prec_stack, SYMBOL_NONTERMINAL, prec_stack->top->value_type, prec_stack->top->attribute->str))
                 {
                     set_error_code(parser_data, INTERNAL_ERROR);
                     return false;
                 }
 
+                
+
                 return true;
             }
+            // jiné pravidlo stylu E -> E op E nebo E -> (E)
             else if(prec_stack->top->next_ptr->next_ptr->next_ptr->type == SYMBOL_HANDLE)
             {
-                Token_type leftmost = prec_stack->top->next_ptr->next_ptr->value_type; //nejlevější hodnota pravidla pro zderivování
-                Token_type rightmost = prec_stack->top->value_type; //nejpravější hodnota pravidla pro zderivování
-                if ((leftmost != UNDEFINED) && (leftmost != TOKEN_LEFT_BRACKET) && (rightmost != UNDEFINED) && (rightmost != TOKEN_RIGHT_BRACKET))
+                tSymbol leftmost_sym = prec_stack->top->next_ptr->next_ptr; //nejlevější hodnota pravidla pro zderivování
+                tSymbol middle_sym = prec_stack->top->next_ptr; //prostřední hodnota pravidla
+                tSymbol rightmost_sym = prec_stack->top; //nejpravější hodnota pravidla pro zderivování
+
+                if ((leftmost_sym->value_type != UNDEFINED) && (leftmost_sym->value_type != TOKEN_LEFT_BRACKET) && (rightmost_sym->value_type != UNDEFINED) && (rightmost_sym->value_type != TOKEN_RIGHT_BRACKET))
                 {
                     set_error_code(parser_data, SYNTAX_ERROR);
                     return false;
                 }
                 
+                //sémantická kontrola pravidla, přetypování
+
+                if (!semantic_node_rule(parser_data, prec_stack, leftmost_sym, middle_sym, rightmost_sym))
+                {
+                    return false;
+                }
+                /*
+                //syntaktické zderivování pravidla
 
                 tPrec_stack_pop_handle(prec_stack, DERIVATION_RULE);
 
@@ -218,6 +606,7 @@ bool process_prec_table(tParser_data* parser_data, tPrec_stack* prec_stack, Prec
                     set_error_code(parser_data, INTERNAL_ERROR);
                     return false;
                 }
+                */
 
                 return true;
             }
