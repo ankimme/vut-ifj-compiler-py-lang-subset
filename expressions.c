@@ -32,6 +32,7 @@ void clean_resources(tParser_data* parser_data, tPrec_stack* prec_stack)
 void deep_copy_symbol(tSymbol source, tSymbol destination)
 {
     destination->next_ptr = source->next_ptr->next_ptr;
+    destination->item = source->item;
     destination->retype = source->retype;
     destination->type = source->type;
     destination->value_type = source->value_type;
