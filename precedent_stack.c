@@ -56,6 +56,38 @@ int tPrec_stack_push(tPrec_stack* prec_s, Prec_stack_symbol type, Token_type val
     }
 }
 
+int tPrec_stack_push_nonterminal(tPrec_stack* prec_s, tSymbol val)
+{
+    tSymbol new_symbol = malloc(sizeof(struct symbol));
+
+    if (new_symbol == NULL) //chyba v alokaci
+    {
+        return 0;
+    }
+    else
+    {
+        new_symbol->type = SYMBOL_NONTERMINAL;
+        new_symbol->value_type = val->value_type;
+        new_symbol->retype = val->retype;
+        new_symbol->item = val->item;
+        new_symbol->attribute = malloc(sizeof(dynamic_string));
+        if (new_symbol->attribute == NULL) //chyba v alokaci
+        {
+            return 0;
+        }
+        string_init(new_symbol->attribute);
+        if (!string_append(new_symbol->attribute, val->attribute->str))
+        {
+            return 0;
+        }
+
+        new_symbol->next_ptr = prec_s->top; //ukazuje na předcházející top
+        prec_s->top = new_symbol; //nový symbol novým topem
+
+        return 1;
+    }
+}
+
 tSymbol tPrec_stack_top_term(tPrec_stack* prec_s)
 {
 
@@ -149,8 +181,11 @@ void tPrec_stack_pop(tPrec_stack* prec_s)
         free(pop_symbol->attribute);
         pop_symbol->attribute = NULL;
 
+        
+
         prec_s->top = pop_symbol->next_ptr;
         free(pop_symbol);
+        pop_symbol = NULL;
     }
 }
 

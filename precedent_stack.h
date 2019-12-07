@@ -11,9 +11,9 @@
 #ifndef PRECEDENT_STACK_H
 #define PRECEDENT_STACK_H
 
-#include "dynamic_string.h"
 #include "symtable.h"
 #include "scanner.h"
+
 
 /**
  *
@@ -68,7 +68,7 @@ typedef struct symbol
     Token_type value_type;
     int retype;
     dynamic_string* attribute;
-    tHash_Table_Item* item;
+    tNodeData* item;
     struct symbol *next_ptr;
 }*tSymbol;
 
@@ -116,8 +116,11 @@ int tPrec_stack_empty (const tPrec_stack* prec_s);
  *
  */
 
+
+
 int tPrec_stack_push(tPrec_stack* prec_s, Prec_stack_symbol type, Token_type value_type, char* string);
 
+int tPrec_stack_push_nonterminal(tPrec_stack* prec_s, tSymbol val);
 /**
  * Získání terminálu vyskytujícího se nejvýše u vrcholu zásobníku. 
  *

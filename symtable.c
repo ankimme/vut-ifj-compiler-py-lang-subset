@@ -11,14 +11,15 @@
  */
 
 #include "symtable.h"
+#include "parser.h"
 
 /* FUNKCE PRO TABULKU SYMBOLU */
 
-void st_init (tSymtable *symtable)
+bool st_init (tSymtable *symtable)
 {
     if (symtable == NULL)
     {
-        return;
+        return false;
     }
 
     // nastavi ukazatele na hash tabulky na NULL
@@ -31,20 +32,21 @@ void st_init (tSymtable *symtable)
     if (new_hash_table == NULL)
     {
         // TODO RAISE MALLOC ERROR
-        return;
+        return false;
     }
     ht_init(new_hash_table);
     symtable->HT_array[0] = new_hash_table;
     // printf("%lu", sizeof(tHash_Table)); // DELETE
     symtable->top = 0;
+
+    return true;
 }
 
-void st_indent (tSymtable *symtable)
+bool st_indent (tSymtable *symtable)
 {
     if (symtable->top >= HT_STACK_SIZE - 1)
     {
-        // TODO RAISE TOO MANY INDENTS ERROR
-        return;
+        return false;
     }
 
     // vlozi novou hash tabulku do symtablu
@@ -52,28 +54,32 @@ void st_indent (tSymtable *symtable)
     if (new_hash_table == NULL)
     {
         // TODO RAISE MALLOC ERROR
-        return;
+        return false;
     }
     ht_init(new_hash_table);
     symtable->top++;
     symtable->HT_array[symtable->top] = new_hash_table;
+
+    return true;
 }
 
-void st_dedent (tSymtable *symtable)
+bool st_dedent (tSymtable *symtable)
 {
     if (symtable->top <= 0)
     {
         // TODO RAISE CANNOT DEDENT MAIN CONTEXT
-        return;
+        return false;
     }
 
     ht_clean(symtable->HT_array[symtable->top]);
     free(symtable->HT_array[symtable->top]);
     symtable->HT_array[symtable->top] = NULL;
     symtable->top--;
+
+    return true;
 }
 
-void st_insert_entry_in_current_context (tSymtable *symtable, tKey key, void *data, tHTType type)
+bool st_insert_entry_in_current_context (tSymtable *symtable, tKey key, void *data, tHTType type)
 {
     tHash_Table *hash_table = symtable->HT_array[symtable->top];
 
@@ -86,7 +92,7 @@ void st_insert_entry_in_current_context (tSymtable *symtable, tKey key, void *da
                 if (!item->var_data)
                 {
                     // raise error
-                    return;
+                    return false;
                 }
                 item->var_data = (tVariableData*) data;
                 break;
@@ -94,7 +100,7 @@ void st_insert_entry_in_current_context (tSymtable *symtable, tKey key, void *da
                 if (!item->fun_data)
                 {
                     // raise error
-                    return;
+                    return false;
                 }
                 item->fun_data = (tFunctionData*) data;
                 break;
@@ -102,7 +108,7 @@ void st_insert_entry_in_current_context (tSymtable *symtable, tKey key, void *da
                 if (!item->node_data)
                 {
                     // raise error
-                    return;
+                    return false;
                 }
                 item->node_data = (tNodeData *) data;
                 break;
@@ -111,7 +117,7 @@ void st_insert_entry_in_current_context (tSymtable *symtable, tKey key, void *da
                 break;
         }
         item->type = type;
-        return;
+        return true;
     }
     
     // polozka neexistuje => pokracuje se ve vkladani na zacatek seznamu
@@ -120,7 +126,7 @@ void st_insert_entry_in_current_context (tSymtable *symtable, tKey key, void *da
     if (new_item == NULL)
     {
         // TODO RAISE MALLOC ERROR
-        return;
+        return false;
     }
     // new_item->key todo
     new_item->key = key; //DELETE
@@ -149,13 +155,16 @@ void st_insert_entry_in_current_context (tSymtable *symtable, tKey key, void *da
     new_item->next_item = (*hash_table)[hash];
     (*hash_table)[hash] = new_item;
 
-    return;
+    return true;
 }
 
 tHash_Table_Item* st_insert_entry_in_current_context_random_key (tSymtable *symtable, void *data, tHTType type)
 {
     tKey key = st_generate_random_key();
-    st_insert_entry_in_current_context (symtable, key, data, type);
+    if(!st_insert_entry_in_current_context(symtable, key, data, type))
+    {
+        return NULL;
+    }
     tHash_Table_Item *item = st_search_entry(symtable, key);
     return item;
 }
@@ -163,7 +172,10 @@ tHash_Table_Item* st_insert_entry_in_current_context_random_key (tSymtable *symt
 
 tHash_Table_Item* st_search_entry (tSymtable *symtable, tKey key)
 {
-
+    if (key == NULL)
+    {
+        return NULL;
+    }
     tHash_Table_Item* item;
     int hash = st_generate_hash(key);
 
@@ -245,6 +257,15 @@ void ht_item_clean ( tHash_Table_Item* item )
     item->var_data = NULL;
 
     // uvolneni node_data
+    if (item->node_data)
+    {
+        if (item->node_data->attribute)
+        {
+            string_free(item->node_data->attribute);
+            free(item->node_data->attribute);
+            item->node_data->attribute = NULL;
+        }
+    }
     free(item->node_data);
     item->node_data = NULL;
 }
@@ -269,6 +290,19 @@ tHash_Table_Item* ht_search ( tHash_Table* hash_table, tKey key )
 
     return NULL;
 }
+
+// tNodeData* st_create_node(tSymtable *symtable, tSymbol symbol, tNodeData *lptr, tNodeData *rptr)
+// {
+//     tNodeData *data = malloc(sizeof(tNodeData));
+//     data->attribute = malloc(sizeof(dynamic_string));
+//     string_init(data->attribute);
+//     string_append(data->attribute, symbol->attribute->str);
+//     data->retype = symbol->retype;
+//     data->value_type = symbol->value_type;
+//     data->lptr = lptr;
+//     data->rptr = rptr;
+//     return st_insert_entry_in_current_context_random_key (symtable, data, HT_TYPE_NODE)->node_data;
+// } TODO
 
 // void ht_insert ( tHash_Table* hash_table, tKey key, tData* data )
 // {
@@ -353,7 +387,7 @@ tHash_Table_Item* ht_search ( tHash_Table* hash_table, tKey key )
 //     }
 
 //     // hledani prvku v zretezenem seznamu
-//     while (item->ptrnext != NULL)
+//     while (item->ptrnext != NULL) DELETE
 //     {
 //         if (!strcmp(item->ptrnext->key, key))
 //         {
@@ -396,6 +430,11 @@ tKey st_generate_random_key()
 
 int st_generate_hash(tKey key)
 {
+    // if (key == NULL) delete
+    // {
+    //     // raise error
+    //     return 0;
+    // }
     unsigned long hash = 1, pow;
     const int len_s = strlen(key->str);
     int loop_stop = ((len_s * len_s) % 500) + 5;

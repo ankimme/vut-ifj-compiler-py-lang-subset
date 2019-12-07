@@ -16,34 +16,52 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "dynamic_string.h"
+#include <stdbool.h>
+#include "scanner.h"
 
-// @def Velikost hash tabulky
+
+/** @def Velikost hash tabulky */
 #define HT_SIZE 1171
-// @def Velikost zasobniku hash tabulek
-#define HT_STACK_SIZE 500
+/** @def Velikost zasobniku hash tabulek */
+#define HT_STACK_SIZE 50
 
-/* klíč záznamu v tabulce symbolů */
+/** @def Klíč záznamu v tabulce symbolů */
 typedef dynamic_string* tKey;
 
+/** @def Výčet datových typů */
+typedef enum
+{
+	TYPE_STRING,
+	TYPE_INT,
+	TYPE_FLOAT,
+	TYPE_NONE,
+	TYPE_UNDEFINED,
+} tVarType;
+
+/** @def Data pro záznam funkce */
 typedef struct
 {
-	int a;
+	int params_count;
+	tVarType return_type;
 } tFunctionData;
 
+/** @def Data pro záznam proměnné */
 typedef struct
 {
 	int a;
 } tVariableData;
 
+/** @def Data pro záznam uzlu */
 typedef struct tNodeData
 {
-	int a;
+	Token_type value_type;
+    int retype;
+    dynamic_string* attribute;
 	struct tNodeData *lptr;
 	struct tNodeData *rptr;
 } tNodeData;
 
-/* typ obsahu */
+/** @def Typ obsahu */
 typedef enum
 {
 	HT_TYPE_VARIABLE,
@@ -51,7 +69,7 @@ typedef enum
 	HT_TYPE_NODE,
 } tHTType;
 
-/* Datová položka HT s explicitně řetězenými synonymy*/
+/** @def Položka tabulky symbolů */
  typedef struct tHash_Table_Item
  {
 	tKey key; // klíč
@@ -60,12 +78,13 @@ typedef enum
 	tFunctionData *fun_data;
 	tVariableData *var_data;
 	tNodeData *node_data;
-	struct tHash_Table_Item* next_item;	/* ukazatel na další synonymum */
+	struct tHash_Table_Item* next_item;	// ukazatel na další synonymum
 } tHash_Table_Item;
 
-/* HT s explicitně zřetězenými synonymy. */
+/** @def Hash tabulka s explicitně zřetězenými synonymy */
 typedef tHash_Table_Item* tHash_Table[HT_SIZE];
 
+/** @def Zásobník hash tabulek */
 typedef struct
 {
 	tHash_Table* HT_array[HT_STACK_SIZE];
@@ -83,32 +102,63 @@ typedef struct
  * 
  * @param symtable Vstupní tabulka symbolů 
  * @post Inicializovany symtable, na vrcholu zasobniku je hash tabulka reprezentujici hlavni kontext
+ * @return true v případě úspěšné inicializace, jinak false
  */
-void st_init (tSymtable *symtable);
+bool st_init (tSymtable *symtable);
 
 /**
  * Push nově alokované tabulky do zásobníku hash tabulek
  * 
  * @param symtable Vstupní tabulka symbolů 
  * @post Do tabulky symbolu je vložena nová hash tabulka, která reprezentuje aktuální kontext
+ * @return true v případě úspěšného vložení, jinak false
  */
-void st_indent (tSymtable *symtable);
+bool st_indent (tSymtable *symtable);
 
-// TODO
-void st_dedent (tSymtable *symtable);
+/**
+ * Pop nejvrchnější tabulky v zásobníku hash tabulek
+ * 
+ * @param symtable Vstupní tabulka symbolů 
+ * @post Z tabulky symbolů je vyhozena jedna hashovací tabulka
+ * @return true v případě úspěšného odstranění, jinak false
+ */
+bool st_dedent (tSymtable *symtable);
 
 /**
  * Přidá záznam dat do aktuální hash tabulky
- * V případě že záznam se stejným klíčem již existuje, data se přepíší
+ * V případě že záznam se stejným klíčem i typem již existuje, data se přepíší
  * 
  * @param symtable Vstupní tabulka symbolů 
- * @post 
+ * @param key Klíč vkládaného záznamu
+ * @param data Ukazatel na funkční data
+ * @param type Typ dat
+ * @post Záznam je vložen do lokální tabulky symbolů
+ * @return true v případě úspěšného vložení, jinak false
  */
-void st_insert_entry_in_current_context (tSymtable *symtable, tKey key, void *data, tHTType type);
+bool st_insert_entry_in_current_context (tSymtable *symtable, tKey key, void *data, tHTType type);
 
+/**
+ * Přidá záznam dat do aktuální hash tabulky s náhodně vygenerovaným klíčem
+ * V případě že záznam se stejným klíčem i typem již existuje, data se přepíší
+ * 
+ * @param symtable Vstupní tabulka symbolů 
+ * @param data Ukazatel na funkční data
+ * @param type Typ dat
+ * @post Záznam je vložen do lokální tabulky symbolů
+ * @return Ukazatel na vložený záznam, NULL v případě neúspěchu
+ */
 tHash_Table_Item* st_insert_entry_in_current_context_random_key (tSymtable *symtable, void *data, tHTType type);
 
 // TODO
+// tNodeData* st_create_node(tSymtable *symtable, tSymbol symbol, tNodeData *lptr, tNodeData *rptr);
+
+/**
+ * Vyhledá záznam v tabulce symbolů na základě klíče
+ * 
+ * @param symtable Vstupní tabulka symbolů 
+ * @param key Vyhledací klíč
+ * @post Ukazatel na nalezenou položku, NULL v případě neúspěchu
+ */
 tHash_Table_Item* st_search_entry (tSymtable *symtable, tKey key);
 
 /**
@@ -139,6 +189,12 @@ void ht_init (tHash_Table* hash_table);
  */
 void ht_clean (tHash_Table* hash_table);
 
+/**
+ * Uvolnění záznamu v hash tabulce z paměti
+ * 
+ * @param item Vstupní záznam
+ * @post Obsah záznamu je uvolněn z paměti
+ */
 void ht_item_clean ( tHash_Table_Item* item );
 
 /**
@@ -162,7 +218,7 @@ tHash_Table_Item* ht_search (tHash_Table* hash_table, tKey key);
 
 // tHash_Table_Item* htSearch ( tHash_Table* ptrht, tKey key );
 
-// void htInsert ( tHash_Table* ptrht, tKey key, tData data );
+// void htInsert ( tHash_Table* ptrht, tKey key, tData data ); DELETE
 
 // tData* htRead ( tHash_Table* ptrht, tKey key );
 
@@ -170,9 +226,19 @@ tHash_Table_Item* ht_search (tHash_Table* hash_table, tKey key);
 
 // void htClearAll ( tHash_Table* ptrht );
 
-
+/**
+ * Vygeneruje náhodný klíč o délce 128 znaků
+ * 
+ * @return Náhodně vygenerovaný klíč
+ */
 tKey st_generate_random_key();
 
+/**
+ * Na zálkadě vstupního klíče vygeneruje příslušný hash
+ * 
+ * @param key Vstupní klíč
+ * @return Vygenerovaný hash kod
+ */
 int st_generate_hash(tKey key);
 
 #endif

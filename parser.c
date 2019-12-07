@@ -23,7 +23,7 @@ int start_analysis()
     // get_next_token(parser_data->current_token, parser_data->scanner_stack); DELETE
     get_token_and_set_error_code(parser_data);
     bool unknown_error = !prog(parser_data); // TODO remove unknown error handling
-    int error_code = unknown_error && !parser_data->error_code ? 98 : parser_data->error_code;
+    int error_code = unknown_error && !parser_data->error_code ? 6 : parser_data->error_code;
     free_parser_data(parser_data);
     free(parser_data);
     parser_data = NULL;
@@ -86,6 +86,51 @@ bool init_parser_data(tParser_data *parser_data)
         return false;
     }
     st_init(parser_data->symtable);
+
+    // vlozeni print entry do tabulky symbolu
+    tKey entry_print = malloc(sizeof(dynamic_string));
+    string_init(entry_print);
+    string_append(entry_print, "print");
+    tFunctionData *data_print = malloc(sizeof(tFunctionData));
+    data_print->params_count = 1; // TODO vice parametru
+    data_print->return_type = TYPE_NONE;
+    st_insert_entry_in_current_context(parser_data->symtable, entry_print, data_print, HT_TYPE_FUNCTION);
+    // TODO vlozit vsechny vestavene funkce
+
+
+    // vlozeni inputs entry do tabulky symbolu
+    tKey entry_inputs = malloc(sizeof(dynamic_string));
+    string_init(entry_inputs);
+    string_append(entry_inputs, "inputs");
+    tFunctionData *data_inputs = malloc(sizeof(tFunctionData));
+    // todo
+    data_inputs->params_count = 0;
+    data_inputs->return_type = TYPE_STRING;
+    st_insert_entry_in_current_context(parser_data->symtable, entry_inputs, data_inputs, HT_TYPE_FUNCTION);
+
+
+    // vlozeni inputi entry do tabulky symbolu
+    tKey entry_inputi = malloc(sizeof(dynamic_string));
+    string_init(entry_inputi);
+    string_append(entry_inputi, "inputi");
+    tFunctionData *data_inputi = malloc(sizeof(tFunctionData));
+    // todo
+    data_inputs->params_count = 0;
+    data_inputs->return_type = TYPE_INT;
+    st_insert_entry_in_current_context(parser_data->symtable, entry_inputi, data_inputi, HT_TYPE_FUNCTION);
+
+
+    // vlozeni inputf entry do tabulky symbolu
+    tKey entry_inputf = malloc(sizeof(dynamic_string));
+    string_init(entry_inputf);
+    string_append(entry_inputf, "inputf");
+    tFunctionData *data_inputf = malloc(sizeof(tFunctionData));
+    // todo
+    data_inputf->params_count = 0;
+    data_inputf->return_type = TYPE_FLOAT;
+    st_insert_entry_in_current_context(parser_data->symtable, entry_inputf, data_inputf, HT_TYPE_FUNCTION);
+
+
 
     // inicializace error kodu
     parser_data->error_code = 0;

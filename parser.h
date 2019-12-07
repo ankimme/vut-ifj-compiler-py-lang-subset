@@ -13,10 +13,10 @@
 
 #include "scanner.h"
 #include "symtable.h"
-// #include "expressions.h"
 
 #include <stdbool.h>
 
+/** @def Funkční data potřebná pro syntaktickou analýzu */
 typedef struct
 {
     St_token *current_token;

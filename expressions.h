@@ -50,13 +50,21 @@ typedef enum
 }Prec_rule;
 
 
+void post_order_gen_code(tParser_data* parser_data, tNodeData *node);
+
+void process_node(tParser_data* parser_data, tNodeData *item);
+
 void clean_resources(tParser_data* parser_data, tPrec_stack* prec_stack);
 
-bool derive_rule(tParser_data* parser_data, tPrec_stack* prec_stack, Token_type value_type, char* string);
+bool deep_copy_value(tSymbol source, tSymbol destination);
+
+tNodeData* st_create_node(tSymtable *symtable, tSymbol symbol, tNodeData *lptr, tNodeData *rptr);
+
+bool derive_rule(tParser_data* parser_data, tPrec_stack* prec_stack, tSymbol val, tNodeData* l_ptr, tNodeData* r_ptr);
 
 bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSymbol left_operand, tSymbol operator, tSymbol right_operand);
 
-bool semantic_node_value(tSymbol value);
+bool semantic_node_value(tParser_data* parser_data, tSymbol value, tSymbol backup);
 
 bool semantic_node_rule(tParser_data* parser_data, tPrec_stack* prec_stack, tSymbol left_sym, tSymbol middle_sym, tSymbol right_sym);
 
