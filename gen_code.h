@@ -1,3 +1,4 @@
+
 /*
  * @file gen_code.h
  * @brief Deklarace funkcí pro generování výstupního kódu
@@ -15,31 +16,23 @@
 
 #define HEADER \
 	".IFJcode19\n"\
+	"DEFVAR GF@return\n"\
 	"JUMP _main\n" \
-	"LABEL _main\n"\
+
 
 #define INPUTS \
 	"LABEL _inputs\n" \
-	"PUSHFRAME\n" \
-	"DEFVAR LF@line\n" \
-	"READ LF@line string\n" \
-	"POPFRAME\n" \
-	"RETURN\n" \
+    "READ GF@return string\n" \
+    "RETURN\n" \
 
 #define INPUTI \
-	"LABEL _inputs\n" \
-	"PUSHFRAME\n" \
-	"DEFVAR LF@line\n" \
-	"READ LF@line int\n" \
-	"POPFRAME\n" \
+	"LABEL _inputi\n" \
+	"READ GF@return int\n" \
 	"RETURN\n" \
 
 #define INPUTF \
-	"LABEL _inputs\n" \
-	"PUSHFRAME\n" \
-	"DEFVAR LF@line\n" \
-	"READ LF@line float\n" \
-	"POPFRAME\n" \
+	"LABEL _inputf\n" \
+	"READ GF@return float\n" \
 	"RETURN\n" \
 
 #define CHAR \

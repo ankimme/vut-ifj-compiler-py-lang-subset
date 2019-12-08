@@ -12,14 +12,14 @@
 
 void generate_build_in_functions() 
 {
-	printf("%s", INPUTS);
-	printf("%s", INPUTI);
-	printf("%s", INPUTF);
-	printf("%s", CHAR);
-	printf("%s", LENGTH);
+//	printf("%s", INPUTS);
+//	printf("%s", INPUTI);
+//	printf("%s", INPUTF);
+	//printf("%s", CHAR);
+//	printf("%s", LENGTH);
 	printf("%s", PRINT);
-	printf("%s", ORD);
-	printf("%s", SUBSTRING);
+	//printf("%s", ORD);
+//	printf("%s", SUBSTRING);
 
 }
 
@@ -28,31 +28,54 @@ void generate_header()
 	printf("%s", HEADER);
 }
 
-void start_generating()
-{	
-	generate_header();
-	generate_build_in_functions();
-}
 
 void generate_main_header()
 {
-	printf("%s","LABEL _main");
-	printf("%s","CREATEFRAME");
-	printf("%s","PUSHFRAME");
+	printf("%s","LABEL _main\n");
+	printf("%s","CREATEFRAME\n");
+	printf("%s","PUSHFRAME\n");
 }
 
 void generate_main_footer() 
 {
-	printf("%s", "POPFRAME");
-	printf("%s", "CLEARS");
+	printf("%s", "POPFRAME\n");
+	printf("%s", "CLEARS\n");
 }
+
+void generate_function_arg() 
+{
+	printf("%s", "CREATEFRAME\n");
+}
+
+void generate_function_pass_arg(char* param, int functionID)
+{
+	printf("%s", "DEFVAR TF@");
+	printf("%d", functionID);
+	printf("%s", "\n");
+	printf("%s", "MOVE TF@");
+	printf("%d", functionID);
+	printf("%s", " ");
+	printf("%s", param);
+	printf("%s", "\n");
+}
+
+void start_generating()
+{
+	generate_header();
+	generate_main_header();
+
+	generate_function_arg();
+	generate_function_pass_arg("AAA", 1);
+	generate_build_in_functions();
+	generate_main_footer();
+}
+
 
 void generate_function_start(char* function_name)
 {
 	printf("%s", "LABEL _");
 	printf("%s", function_name);
 	printf("%s", "\n");
-	printf("%s", "CREATEFRAME");
 	printf("%s", "PUSHFRAME");
 }
 
@@ -103,6 +126,7 @@ void generate_value_type(int type)
 		return;
 	}
 }
+
 
 void generate_func_variables(char* name, char*value)
 {
