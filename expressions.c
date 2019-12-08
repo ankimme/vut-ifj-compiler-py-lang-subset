@@ -41,6 +41,27 @@ void clean_resources(tParser_data* parser_data, tPrec_stack* prec_stack)
     st_dedent(parser_data->symtable);
 }
 
+bool process_types_no_retype(tParser_data* parser_data, tPrec_stack* prec_stack, tSymbol symb_rule, tNodeData* l_ptr, tNodeData* r_ptr, tSymbol next, int retype, Prec_stack_symbol type, Token_type value_type, char* str)
+{
+    if(!deep_copy_rule(symb_rule, next, retype, type, value_type, str))
+    {
+        set_error_code(parser_data, INTERNAL_ERROR);
+        FREE_S
+        return false;
+    }
+
+    //derivace pravidla
+    if (!derive_rule(parser_data, prec_stack, symb_rule, l_ptr, r_ptr))
+    {
+        FREE_S
+        return false;
+    }
+
+    FREE_S
+
+    return true;
+}
+
 bool deep_copy_rule(tSymbol destination, tSymbol next, int retype, Prec_stack_symbol type, Prec_token value_type, char* str)
 {
     
@@ -225,22 +246,10 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
             if ((l_value == TOKEN_STRING_LITERAL) && (r_value == TOKEN_STRING_LITERAL))
             {
                 //vytvoří neterminál simulující vložení zderivovaného pravidla na zásobník
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, TOKEN_STRING_LITERAL, "+"))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, TOKEN_STRING_LITERAL, "+"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                //derivace pravidla
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-
-                FREE_S
-
                 return true;
             }
             else if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))

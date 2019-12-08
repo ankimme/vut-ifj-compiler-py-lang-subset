@@ -56,6 +56,10 @@ void process_node(tParser_data* parser_data, tNodeData *item);
 
 void clean_resources(tParser_data* parser_data, tPrec_stack* prec_stack);
 
+bool process_types_no_retype(tParser_data* parser_data, tPrec_stack* prec_stack, tSymbol symb_rule, tNodeData* l_ptr, tNodeData* r_ptr, tSymbol next, int retype, Prec_stack_symbol type, Token_type value_type, char* str);
+
+bool deep_copy_rule(tSymbol destination, tSymbol next, int retype, Prec_stack_symbol type, Prec_token value_type, char* str);
+
 bool deep_copy_value(tSymbol source, tSymbol destination);
 
 tNodeData* st_create_node(tSymtable *symtable, tSymbol symbol, tNodeData *lptr, tNodeData *rptr);
