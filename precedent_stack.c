@@ -189,6 +189,24 @@ void tPrec_stack_pop(tPrec_stack* prec_s)
     }
 }
 
+void tPrec_stack_pop_after_top(tPrec_stack* prec_s)
+{
+    if (!tPrec_stack_empty(prec_s))
+    {
+        tSymbol pop_symbol = prec_s->top->next_ptr;
+
+        string_free(pop_symbol->attribute);
+        free(pop_symbol->attribute);
+        pop_symbol->attribute = NULL;
+
+        
+
+        prec_s->top->next_ptr = pop_symbol->next_ptr;
+        free(pop_symbol);
+        pop_symbol = NULL;
+    }
+}
+
 void tPrec_stack_pop_handle(tPrec_stack* prec_s, Prec_derivation derivation)
 {
     for (unsigned int i = 0; i < (derivation+1); i++)

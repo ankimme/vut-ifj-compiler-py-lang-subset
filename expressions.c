@@ -33,7 +33,6 @@ char prec_table[7][7] =
     } \
     symb_rule = NULL; \
 
-
 void clean_resources(tParser_data* parser_data, tPrec_stack* prec_stack)
 {
     tPrec_stack_clean(prec_stack);
@@ -43,6 +42,7 @@ void clean_resources(tParser_data* parser_data, tPrec_stack* prec_stack)
 
 bool process_types_no_retype(tParser_data* parser_data, tPrec_stack* prec_stack, tSymbol symb_rule, tNodeData* l_ptr, tNodeData* r_ptr, tSymbol next, int retype, Prec_stack_symbol type, Token_type value_type, char* str)
 {
+    //vytvoří neterminál simulující vložení zderivovaného pravidla na zásobník
     if(!deep_copy_rule(symb_rule, next, retype, type, value_type, str))
     {
         set_error_code(parser_data, INTERNAL_ERROR);
@@ -58,7 +58,62 @@ bool process_types_no_retype(tParser_data* parser_data, tPrec_stack* prec_stack,
     }
 
     FREE_S
+    return true;
+}
 
+bool process_types_one_retype(tParser_data* parser_data, tPrec_stack* prec_stack, tSymbol symb_rule, tNodeData* l_ptr, tNodeData* r_ptr, Token_type l_value, tSymbol next, int retype, Prec_stack_symbol type, Token_type value_type, char* str)
+{
+    //vytvoří neterminál simulující vložení zderivovaného pravidla na zásobník
+    if(!deep_copy_rule(symb_rule, next, retype, type, value_type, str))
+    {
+        set_error_code(parser_data, INTERNAL_ERROR);
+        FREE_S
+        return false;
+    }
+
+    //derivace pravidla
+    if (!derive_rule(parser_data, prec_stack, symb_rule, l_ptr, r_ptr))
+    {
+        FREE_S
+        return false;
+    }
+
+    //nutno jeden operand přetypovat
+    if (l_value == TOKEN_INTEGER)
+    {
+        prec_stack->top->item->lptr->retype = 1;
+    }
+    else
+    {
+        prec_stack->top->item->rptr->retype = 1;
+    }
+
+    FREE_S
+    return true;
+}
+
+bool process_types_both_retype(tParser_data* parser_data, tPrec_stack* prec_stack, tSymbol symb_rule, tNodeData* l_ptr, tNodeData* r_ptr, tSymbol next, int retype, Prec_stack_symbol type, Token_type value_type, char* str)
+{
+    //vytvoří neterminál simulující vložení zderivovaného pravidla na zásobník
+    if(!deep_copy_rule(symb_rule, next, retype, type, value_type, str))
+    {
+        set_error_code(parser_data, INTERNAL_ERROR);
+        FREE_S
+        return false;
+    }
+
+    //derivace pravidla
+    if (!derive_rule(parser_data, prec_stack, symb_rule, l_ptr, r_ptr))
+    {
+        FREE_S
+        return false;
+    }
+
+    //nutno přetypovat oba operandy na float
+    prec_stack->top->item->lptr->retype = 1;
+    prec_stack->top->item->rptr->retype = 1;
+
+    FREE_S
     return true;
 }
 
@@ -104,20 +159,6 @@ bool deep_copy_value(tSymbol source, tSymbol destination)
         return false;
     }
     return true;
-
-
-    //DELETE
-    /*
-    // hluboka kopie ukazatele do tabulky symbolů
-    destination->item = malloc(sizeof(tNodeData));
-    destination->item->attribute = malloc(sizeof(dynamic_string));
-    string_init(destination->item->attribute);
-    string_append(destination->item->attribute, source->item->attribute->str);
-    destination->item->retype = source->item->retype;
-    destination->item->value_type = source->item->value_type;
-    destination->item->lptr = source->item->lptr;
-    destination->item->rptr = source->item->rptr;
-    */
 }
 
 tNodeData* st_create_node(tSymtable *symtable, tSymbol symbol, tNodeData *lptr, tNodeData *rptr)
@@ -165,59 +206,92 @@ void post_order_gen_code(tParser_data* parser_data, tNodeData *node)
     post_order_gen_code(parser_data, node->lptr);
     post_order_gen_code(parser_data, node->rptr);
 
-    process_node(parser_data, node);
+    process_node(/*parser_data,*/ node);
 }
 
-void process_node(tParser_data* parser_data, tNodeData *item)
+void process_node(/*tParser_data* parser_data,*/ tNodeData *item)
 {
-    tHash_Table_Item *ht_item;
+    // tHash_Table_Item *ht_item;
     switch (item->value_type)
     {
-    case TOKEN_INTEGER:
-        printf("PUSH int %s\n", item->attribute->str);
-        if (item->retype)
-        {
-            printf("int to float\n");
-        }
-        break;
-    case TOKEN_DOUBLE:
-        printf("PUSH double %s", item->attribute->str);
-        break;
-    case TOKEN_PLUS:
-        printf("ADDS\n");
-        break;
-    case TOKEN_MINUS:
-        printf("SUBS\n");
-        break;
-    case TOKEN_MULTIPLY:
-        printf("MULS\n");
-        break;
-    case TOKEN_DIVIDE_FLOAT:
-        printf("DIVS\n");
-        break;
-    case TOKEN_DIVIDE_INTEGER:
-        printf("DIVS\n");
-        break;
-    case TOKEN_LESS_OR_EQUAL:
-        break;
-    case TOKEN_LESS_THAN:
-        break;
-    case TOKEN_EQUAL:
-        break;
-    case TOKEN_NOT_EQUAL:
-        break;
-    case TOKEN_GREATER_OR_EQUAL:
-        break;
-    case TOKEN_GREATER_THAN:
-        break;
-    case TOKEN_IDENTIFIER:
-        ht_item = st_search_entry(parser_data->symtable, item->attribute);
-        if (ht_item)
-        {
-            printf("PUSH %s\n", ht_item->key->str);
-        }
-    default:
-        break;
+        case TOKEN_INTEGER:
+        case TOKEN_DOUBLE:
+        case TOKEN_STRING_LITERAL:
+        case TOKEN_KEYWORD:
+            // dosel uzel scitani
+            if (strcmp(item->attribute->str, "+") == 0)
+            {
+                generate_adds();
+            }
+            // dosel uzel odcitani
+            else if (strcmp(item->attribute->str, "-") == 0)
+            {
+                generate_subs();
+            }
+            // dosel uzel nasobeni
+            else if (strcmp(item->attribute->str, "*") == 0)
+            {
+                generate_muls();
+            }
+            // dosel uzel deleni celych cisel
+            else if (strcmp(item->attribute->str, "//") == 0)
+            {
+                generate_idivs();
+            }
+            // dosel uzel deleni desetinnych cisel
+            else if (strcmp(item->attribute->str, "/") == 0)
+            {
+                generate_divs();
+            }
+            // dosel uzel "=="
+            else if (strcmp(item->attribute->str, "==") == 0)
+            {
+                generate_EQS();
+            }
+            // dosel uzel "<="
+            else if (strcmp(item->attribute->str, "<=") == 0)
+            {
+                // generate_LTEQ();
+            }
+            // dosel uzel ">="
+            else if (strcmp(item->attribute->str, ">=") == 0)
+            {
+                // generate_GTEQ();
+            }
+            // dosel uzel "<"
+            else if (strcmp(item->attribute->str, "<") == 0)
+            {
+                generate_LTS();
+            }
+            // dosel uzel ">"
+            else if (strcmp(item->attribute->str, ">") == 0)
+            {
+                generate_GTS();
+            }
+            // doslo cislo
+            else
+            {
+                generate_pushs(item->attribute->str, item->value_type);
+                // pretypovani int na float
+                if (item->retype)
+                {
+                    conv_int_to_float_stack();
+                }
+            }
+            break;
+        case TOKEN_IDENTIFIER:
+            // ht_item = st_search_entry(parser_data->symtable, item->attribute);
+            // if (ht_item)
+            // {
+            //     generate_pushs(item->attribute->str);
+            // }
+            generate_pushs(item->attribute->str, item->value_type);
+            if (item->retype)
+            {
+                conv_int_to_float_stack();
+            }
+        default:
+            break;
     }
 }
 
@@ -245,7 +319,7 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
         case TOKEN_PLUS: //E -> E + E
             if ((l_value == TOKEN_STRING_LITERAL) && (r_value == TOKEN_STRING_LITERAL))
             {
-                //vytvoří neterminál simulující vložení zderivovaného pravidla na zásobník
+                //kontrola přetypování a zderivování pravidla bez nutnosti přetypování jednoho z operandů
                 if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, TOKEN_STRING_LITERAL, "+"))
                 {
                     return false;
@@ -254,66 +328,27 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
             }
             else if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, TOKEN_INTEGER, "+"))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, TOKEN_INTEGER, "+"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-
-                FREE_S
-                return true;  
+                return true;
             }
             else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "+"))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "+"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-                return true; 
+                return true;
             }
             else if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "+"))
+                //kontrola přetypování a zderivování pravidla s nutností jednoho přetypování
+                if(!process_types_one_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, l_value, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "+"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-
-                //PŘETYPOVAT
-                if (l_value == TOKEN_INTEGER)
-                {
-                    prec_stack->top->item->lptr->retype = 1;
-                }
-                else
-                {
-                    prec_stack->top->item->rptr->retype = 1;
-                }
-
-                FREE_S
                 return true;
             }
             else
@@ -327,68 +362,26 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
         case TOKEN_MINUS: //E -> E - E
             if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, TOKEN_INTEGER, "-"))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, TOKEN_INTEGER, "-"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-
-                FREE_S
                 return true; 
             }
             else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "-"))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "-"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-
-                FREE_S
                 return true;
             }
             else if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "-"))
+                if(!process_types_one_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, l_value, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "-"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-
-                //PŘETYPOVAT
-                if (l_value == TOKEN_INTEGER)
-                {
-                    prec_stack->top->item->lptr->retype = 1;
-                }
-                else
-                {
-                    prec_stack->top->item->rptr->retype = 1;
-                }
-
-                FREE_S
                 return true;
             }
             else
@@ -402,69 +395,26 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
         case TOKEN_MULTIPLY: //E -> E * E
             if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, TOKEN_INTEGER, "*"))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, TOKEN_INTEGER, "*"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                
-                FREE_S
                 return true; 
             }
             else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "*"))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "*"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-
-                FREE_S
-                return true;
+                return true; 
             }
             else if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "*"))
+                if(!process_types_one_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, l_value, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "*"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-
-                //PŘETYPOVAT
-                if (l_value == TOKEN_INTEGER)
-                {
-                    prec_stack->top->item->lptr->retype = 1;
-                }
-                else
-                {
-                    prec_stack->top->item->rptr->retype = 1;
-                }
-
-                FREE_S
-
                 return true;
             }
             else
@@ -478,22 +428,11 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
         case TOKEN_DIVIDE_INTEGER: //E -> E // E
             if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, TOKEN_INTEGER, "//"))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, TOKEN_INTEGER, "//"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-
-                FREE_S
-
-                return true;
+                return true; 
             }
             else
             {
@@ -506,73 +445,27 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
         case TOKEN_DIVIDE_FLOAT: // E -> E / E
             if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "/"))
+                //kontrola přetypování a zderivování pravidla s nutností dvou přetypování
+                if(!process_types_both_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "/"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-
-                //nutno přetypovat na float
-                prec_stack->top->item->lptr->retype = 1;
-                prec_stack->top->item->rptr->retype = 1;
-
-                FREE_S
-
                 return true;
             }
             else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "/"))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "/"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
                 return true;
             }
             else if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "/"))
+                if(!process_types_one_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, l_value, next, 0, SYMBOL_NONTERMINAL, TOKEN_DOUBLE, "/"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-
-                //PŘETYPOVAT
-                if (l_value == TOKEN_INTEGER)
-                {
-                    prec_stack->top->item->lptr->retype = 1;
-                }
-                else
-                {
-                    prec_stack->top->item->rptr->retype = 1;
-                }
-
-                FREE_S
-
                 return true;
             }
             else
@@ -585,88 +478,34 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
         case TOKEN_LESS_THAN: // E -> E < E
             if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "<"))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "<"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
                 return true;
             }
             else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "<"))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "<"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
                 return true;
             }
             else if ((l_value == TOKEN_STRING_LITERAL) && (r_value == TOKEN_STRING_LITERAL))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "<"))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "<"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
                 return true;
             }
             else if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "<"))
+                if(!process_types_one_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, l_value, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "<"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-
-                //PŘETYPOVAT
-                if (l_value == TOKEN_INTEGER)
-                {
-                    prec_stack->top->item->lptr->retype = 1;
-                }
-                else
-                {
-                    prec_stack->top->item->rptr->retype = 1;
-                }
-
-                FREE_S
-
                 return true;
             }
             else
@@ -680,88 +519,34 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
         case TOKEN_GREATER_THAN: // E -> E > E
             if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">"))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
                 return true;
             }
             else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">"))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
                 return true;
             }
             else if ((l_value == TOKEN_STRING_LITERAL) && (r_value == TOKEN_STRING_LITERAL))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">"))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
                 return true;
             }
             else if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">"))
+                if(!process_types_one_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, l_value, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">"))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-
-                //PŘETYPOVAT
-                if (l_value == TOKEN_INTEGER)
-                {
-                    prec_stack->top->item->lptr->retype = 1;
-                }
-                else
-                {
-                    prec_stack->top->item->rptr->retype = 1;
-                }
-
-                FREE_S
-
                 return true;
             }
             else
@@ -774,88 +559,34 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
         case TOKEN_LESS_OR_EQUAL: // E -> E <= E
             if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "<="))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "<="))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
                 return true;
             }
             else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "<="))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "<="))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
                 return true;
             }
             else if ((l_value == TOKEN_STRING_LITERAL) && (r_value == TOKEN_STRING_LITERAL))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "<="))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "<="))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
                 return true;
             }
             else if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "<="))
+                if(!process_types_one_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, l_value, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "<="))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-
-                //PŘETYPOVAT
-                if (l_value == TOKEN_INTEGER)
-                {
-                    prec_stack->top->item->lptr->retype = 1;
-                }
-                else
-                {
-                    prec_stack->top->item->rptr->retype = 1;
-                }
-
-                FREE_S
-
                 return true;
             }
             else
@@ -868,88 +599,34 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
         case TOKEN_GREATER_OR_EQUAL: // E -> E >= E
             if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">="))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">="))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
                 return true;
             }
             else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">="))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">="))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
                 return true;
             }
             else if ((l_value == TOKEN_STRING_LITERAL) && (r_value == TOKEN_STRING_LITERAL))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">="))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">="))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
                 return true;
             }
             else if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">="))
+                if(!process_types_one_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, l_value, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">="))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-
-                //PŘETYPOVAT
-                if (l_value == TOKEN_INTEGER)
-                {
-                    prec_stack->top->item->lptr->retype = 1;
-                }
-                else
-                {
-                    prec_stack->top->item->rptr->retype = 1;
-                }
-
-                FREE_S
-
                 return true;
             }
             else
@@ -960,292 +637,64 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
                 return false;
             }
         case TOKEN_EQUAL: // E -> E == E
-            if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
+            if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "=="))
+                if(!process_types_one_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, l_value, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "=="))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
-                return true;
-            }
-            else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
-            {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "=="))
-                {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
-                    return false;
-                }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
-                return true;
-            }
-            else if ((l_value == TOKEN_STRING_LITERAL) && (r_value == TOKEN_STRING_LITERAL))
-            {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "=="))
-                {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
-                    return false;
-                }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
-                return true;
-            }
-            else if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
-            {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "=="))
-                {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
-                    return false;
-                }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-
-                //PŘETYPOVAT
-                if (l_value == TOKEN_INTEGER)
-                {
-                    prec_stack->top->item->lptr->retype = 1;
-                }
-                else
-                {
-                    prec_stack->top->item->rptr->retype = 1;
-                }
-
-                FREE_S
-
                 return true;
             }
             else
             {
                 //lze porovnávat asi vše
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "=="))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "=="))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
                 return true;
             }
         case TOKEN_NOT_EQUAL: // E -> E != E
-            if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
+            if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
             {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "!="))
+                if(!process_types_one_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, l_value, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "!="))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
-                return true;
-            }
-            else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
-            {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "!="))
-                {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
-                    return false;
-                }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
-                return true;
-            }
-            else if ((l_value == TOKEN_STRING_LITERAL) && (r_value == TOKEN_STRING_LITERAL))
-            {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "!="))
-                {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
-                    return false;
-                }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
-                return true;
-            }
-            else if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
-            {
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "!="))
-                {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
-                    return false;
-                }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-
-                //PŘETYPOVAT
-                if (l_value == TOKEN_INTEGER)
-                {
-                    prec_stack->top->item->lptr->retype = 1;
-                }
-                else
-                {
-                    prec_stack->top->item->rptr->retype = 1;
-                }
-
-                FREE_S
-
                 return true;
             }
             else
             {
                 //lze porovnávat asi vše
-                if(!deep_copy_rule(symb_rule, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "!="))
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "!="))
                 {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
                     return false;
                 }
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    FREE_S
-                    return false;
-                }
-                
-                FREE_S
-
                 return true;
             }
         case TOKEN_IDENTIFIER:
-            if (l_value == TOKEN_LEFT_BRACKET && r_value == TOKEN_RIGHT_BRACKET)
-            {
-                if(!deep_copy_rule(symb_rule, next, 0, operator->type, operator->value_type, operator->attribute->str))
-                {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    FREE_S
-                    return false;
-                }
-                symb_rule->item = operator->item;
-
-                if (!derive_rule(parser_data, prec_stack, symb_rule, operator->item->lptr, operator->item->rptr))
-                {
-                    FREE_S
-                    return false;
-                }
-                FREE_S
-                return true;
-            }
-            else
-            {
-                //nelze porovnávat dané operandy, chyba
-                set_error_code(parser_data, RUNTIME_SEMANTIC_ERROR);
-                FREE_S
-                return false;
-            }
         case TOKEN_KEYWORD:
-            if (l_value == TOKEN_LEFT_BRACKET && r_value == TOKEN_RIGHT_BRACKET)
-            {
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    return false;
-                }
-                return true;
-            }
-            else
-            {
-                //nelze porovnávat dané operandy, chyba
-                set_error_code(parser_data, RUNTIME_SEMANTIC_ERROR);
-                return false;
-            }
         case TOKEN_INTEGER:
-            if (l_value == TOKEN_LEFT_BRACKET && r_value == TOKEN_RIGHT_BRACKET)
-            {
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    return false;
-                }
-                return true;
-            }
-            else
-            {
-                //nelze porovnávat dané operandy, chyba
-                set_error_code(parser_data, RUNTIME_SEMANTIC_ERROR);
-                return false;
-            }
         case TOKEN_DOUBLE:
             if (l_value == TOKEN_LEFT_BRACKET && r_value == TOKEN_RIGHT_BRACKET)
             {
-                if (!derive_rule(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item))
-                {
-                    return false;
-                }
+                //vyhodí pravou závorku
+                tPrec_stack_pop(prec_stack);
+                
+                //uvolní ze zásobníku symboly za symbolem mezi závorkami a prováže ukazatel symbolu mezi závorkami na symbol za handle závorek na zásobníku
+                tPrec_stack_pop_after_top(prec_stack);
+                tPrec_stack_pop_after_top(prec_stack);
+                
+                FREE_S
                 return true;
             }
             else
             {
                 //nelze porovnávat dané operandy, chyba
                 set_error_code(parser_data, RUNTIME_SEMANTIC_ERROR);
+                FREE_S
                 return false;
             }
-            
-
 
         default:
             set_error_code(parser_data, SYNTAX_ERROR);
@@ -1253,18 +702,9 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
     }
 }
 
-//TODO
+
 bool semantic_node_value(tParser_data* parser_data, tSymbol value, tSymbol backup)
 {
-    // tNodeData *data = malloc(sizeof(tNodeData));
-    // data->attribute = malloc(sizeof(dynamic_string));
-    // string_init(data->attribute);
-    // string_append(data->attribute, value->attribute);
-    // data->retype = value->retype;
-    // data->value_type = value->value_type;
-    // data->lptr = NULL;
-    // data->rptr = NULL;
-    // st_insert_entry_in_current_context_random_key(parser_data->symtable, data, HT_TYPE_NODE);
     tNodeData *data = st_create_node(parser_data->symtable, value, NULL, NULL);
     if (data == NULL)
     {
@@ -1346,9 +786,6 @@ bool semantic_node_rule(tParser_data* parser_data, tPrec_stack* prec_stack, tSym
 }
 
 
-
-//TODO zpracování terminálu ze zásobníku a získání hodnotu z enumu pro určení indexu v tabulce
-
 Prec_token process_terminal(tPrec_stack* prec_stack) //získáme index v řádku pro určení pravidla
 {
     tSymbol top_term = tPrec_stack_top_term(prec_stack);
@@ -1356,7 +793,6 @@ Prec_token process_terminal(tPrec_stack* prec_stack) //získáme index v řádku
 
     switch(symbol_type)
     {
-        //podovně jak u process token PROMYSLET!!
         case TOKEN_PLUS:
         case TOKEN_MINUS:
             return PREC_PLUS_MINUS;
@@ -1395,7 +831,6 @@ Prec_token process_terminal(tPrec_stack* prec_stack) //získáme index v řádku
             {
                 return PREC_OTHER;
             }
-
 
         default:
             return PREC_OTHER;
@@ -1447,13 +882,11 @@ Prec_token process_token(tParser_data* parser_data) //získáme index v sloupci 
                 return PREC_OTHER;
             }
 
-
         default:
             return PREC_OTHER;
     }
 }
 
-//TODO zpracování terminálu ze zásobníku spolu se znakem na vstupu podle pravidla z tabulky
 
 bool process_prec_table(tParser_data* parser_data, tPrec_stack* prec_stack, Prec_token prec_term_type, Prec_token prec_token_type)
 {
@@ -1478,7 +911,6 @@ bool process_prec_table(tParser_data* parser_data, tPrec_stack* prec_stack, Prec
         case '[':
 
             //kontrola zda se nesnažíme o vložení samostatného operátoru mezi závorky
-        
             if ((prec_stack->top->value_type == TOKEN_LEFT_BRACKET) && (prec_token_type != PREC_VALUE))
             {
                 set_error_code(parser_data, SYNTAX_ERROR);
@@ -1527,6 +959,7 @@ bool process_prec_table(tParser_data* parser_data, tPrec_stack* prec_stack, Prec
 
                 //zpracování pravidla
                 tPrec_stack_pop_handle(prec_stack, DERIVATION_VALUE);
+
                 //internal error, pokud se symbol nepodaří vložit na zásobník
                 if(!tPrec_stack_push_nonterminal(prec_stack, val))
                 {
@@ -1548,29 +981,12 @@ bool process_prec_table(tParser_data* parser_data, tPrec_stack* prec_stack, Prec
                 tSymbol middle_sym = prec_stack->top->next_ptr; //prostřední hodnota pravidla
                 tSymbol rightmost_sym = prec_stack->top; //nejpravější hodnota pravidla pro zderivování
 
-                // if ((leftmost_sym->value_type != UNDEFINED) && (leftmost_sym->value_type != TOKEN_LEFT_BRACKET) && (rightmost_sym->value_type != UNDEFINED) && (rightmost_sym->value_type != TOKEN_RIGHT_BRACKET))
-                // {
-                //     set_error_code(parser_data, SYNTAX_ERROR);
-                //     return false;
-                // } DELETE
                 
                 //sémantická kontrola pravidla, přetypování
-
                 if (!semantic_node_rule(parser_data, prec_stack, leftmost_sym, middle_sym, rightmost_sym))
                 {
                     return false;
                 }
-                /*
-                //syntaktické zderivování pravidla
-
-                tPrec_stack_pop_handle(prec_stack, DERIVATION_RULE);
-
-                if(!tPrec_stack_push(prec_stack, SYMBOL_NONTERMINAL, UNDEFINED, "E")) //internal error, pokud se symbol nepodaří vložit na zásobník
-                {
-                    set_error_code(parser_data, INTERNAL_ERROR);
-                    return false;
-                }
-                */
 
                 return true;
             }
@@ -1649,7 +1065,15 @@ bool process_expression(tParser_data* parser_data)
     } while ((strcmp(term->attribute->str, "$") != 0) || (prec_token_type != PREC_OTHER));
 
 
-
+    if (parser_data->table_l_value)
+    {
+        parser_data->table_l_value->var_data->type = (&prec_stack)->top->item->value_type;
+        if (parser_data->table_l_value->var_data->type == UNDEFINED)
+        {
+            set_error_code(parser_data, OTHER_SEMANTIC_ERROR); // priradilo by se bool ale to my nepodporujeme
+            return false;
+        }
+    }
     post_order_gen_code(parser_data, (&prec_stack)->top->item);
     clean_resources(parser_data, &prec_stack);
     return true;

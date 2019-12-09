@@ -48,7 +48,7 @@ typedef struct
 /** @def Data pro záznam proměnné */
 typedef struct
 {
-	int a;
+	Token_type type;
 } tVariableData;
 
 /** @def Data pro záznam uzlu */
@@ -67,6 +67,7 @@ typedef enum
 	HT_TYPE_VARIABLE,
 	HT_TYPE_FUNCTION,
 	HT_TYPE_NODE,
+	HT_TYPE_UNDEFINED,
 } tHTType;
 
 /** @def Položka tabulky symbolů */

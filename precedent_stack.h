@@ -151,6 +151,8 @@ int tPrec_stack_push_handle(tPrec_stack* prec_s);
 
 void tPrec_stack_pop(tPrec_stack* prec_s);
 
+void tPrec_stack_pop_after_top(tPrec_stack* prec_s);
+
 /**
  * Uvolnění paměti všech symbolů zásobníku.
  *

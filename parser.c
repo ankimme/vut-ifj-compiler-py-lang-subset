@@ -18,7 +18,7 @@ int start_analysis()
     {
         return 99;
     }
-
+    start_generating();
     // nacteni prvniho tokenu
     // get_next_token(parser_data->current_token, parser_data->scanner_stack); DELETE
     get_token_and_set_error_code(parser_data);
@@ -27,7 +27,7 @@ int start_analysis()
     free_parser_data(parser_data);
     free(parser_data);
     parser_data = NULL;
-
+    generate_main_footer();
     return error_code;
 }
 
@@ -86,6 +86,9 @@ bool init_parser_data(tParser_data *parser_data)
         return false;
     }
     st_init(parser_data->symtable);
+
+    parser_data->table_l_value = NULL;    
+    parser_data->table_r_value = NULL;    
 
     // vlozeni print entry do tabulky symbolu
     tKey entry_print = malloc(sizeof(dynamic_string));
@@ -802,6 +805,28 @@ bool sequence(tParser_data *parser_data)
     }
     else if (parser_data->current_token->type == TOKEN_IDENTIFIER)
     {
+        parser_data->table_l_value = st_search_entry(parser_data->symtable, parser_data->current_token->attribute);
+
+        // id nebylo definovano -> musi se jednat o variable
+        if (parser_data->table_l_value == NULL)
+        {
+            tKey key = malloc(sizeof(dynamic_string));
+            string_init(key);
+            if (!string_append(key, parser_data->current_token->attribute->str))
+            {
+                set_error_code(parser_data, INTERNAL_ERROR);
+                return false;
+            }
+            tVariableData *data = malloc(sizeof(tVariableData));
+            data->type = UNDEFINED;
+            if(!st_insert_entry_in_current_context(parser_data->symtable, key, data, HT_TYPE_VARIABLE))
+            {
+                set_error_code(parser_data, INTERNAL_ERROR);
+                return false;
+            }
+            parser_data->table_l_value = st_search_entry(parser_data->symtable, key);
+        }
+
         // TODO symtable
         if (!copy_token(parser_data, parser_data->current_token, parser_data->backup_token)) // todo
         {
@@ -813,8 +838,26 @@ bool sequence(tParser_data *parser_data)
         // token je "(" nebo "=" -> pravidlo 12
         if (parser_data->current_token->type == TOKEN_LEFT_BRACKET || parser_data->current_token->type == TOKEN_ASSIGNMENT)
         {
+            // // "(" po neinicializovanem identifikatoru
+            // if (parser_data->table_l_value-> == HT_TYPE_UNDEFINED && parser_data->current_token->type == TOKEN_LEFT_BRACKET)
+            // {
+            //     set_error_code(parser_data, DEFINITION_SEMANTIC_ERROR);
+            //     return false;
+            // }
+            // "(" po promenne
+            if (parser_data->table_l_value->type == HT_TYPE_VARIABLE && parser_data->current_token->type == TOKEN_LEFT_BRACKET)
+            {
+                set_error_code(parser_data, DEFINITION_SEMANTIC_ERROR);
+                return false;
+            }
+            //  "=" po funkci
+            else if (parser_data->table_l_value->type == HT_TYPE_FUNCTION && parser_data->current_token->type == TOKEN_ASSIGNMENT)
+            {
+                set_error_code(parser_data, DEFINITION_SEMANTIC_ERROR);
+                return false;
+            }
+
             // musi nasledovat neterminal INSTRUCT
-            // get_token_and_set_error_code(parser_data); DELETE
             if (!instruct(parser_data))
             {
                 return false;
@@ -1167,17 +1210,20 @@ bool instruct_continue(tParser_data *parser_data)
         {
             return false;
         }
+        
+        parser_data->table_r_value = st_search_entry(parser_data->symtable, parser_data->current_token->attribute);
 
         get_token_and_set_error_code(parser_data);
 
         // token je "(" -> pravidlo 22
         if (parser_data->current_token->type == TOKEN_LEFT_BRACKET)
         {
-            // // musi nasledovat "("
-            // if (!get_compare_check(parser_data, TOKEN_LEFT_BRACKET))
-            // {
-            //     return false;
-            // }
+            // identifikator neni definovany nebo je promenna
+            if (parser_data->table_r_value == NULL || parser_data->table_r_value->type == HT_TYPE_VARIABLE)
+            {
+                set_error_code(parser_data, DEFINITION_SEMANTIC_ERROR);
+                return false;
+            }
 
             // musi nasledovat neterminal TERM
             get_token_and_set_error_code(parser_data);
@@ -1191,6 +1237,8 @@ bool instruct_continue(tParser_data *parser_data)
             {
                 return false;
             }
+
+            parser_data->table_r_value = NULL; // TODO overit jestli to zde opravdu ma byt -> musi se zajistit aby se table_r_value po volani funkce vratil na null, otazka je jestli to udelat zde
         }
         // token je expression -> pravidlo 21
         else
@@ -1201,22 +1249,33 @@ bool instruct_continue(tParser_data *parser_data)
             pom = NULL;
             parser_data->load_backup = true;
 
+
+            generate_variable_declaration (parser_data->table_l_value->key->str);
+
             // musi nasledovat expression
             // get_token_and_set_error_code(parser_data); DELETE
             if (!process_expression(parser_data))
             {
                 return false;
-            }          
+            }
+
+            generate_pops_variable(parser_data->table_l_value->key->str);
+            parser_data->table_l_value = NULL;
         }
     }
     else
     {
+        generate_variable_declaration (parser_data->table_l_value->key->str);
+
         // musi nasledovat expression
         // get_token_and_set_error_code(parser_data); DELETE
         if (!process_expression(parser_data))
         {
             return false;
-        }   
+        }
+
+        generate_pops_variable(parser_data->table_l_value->key->str);
+        parser_data->table_l_value = NULL;
     }
     
     /*

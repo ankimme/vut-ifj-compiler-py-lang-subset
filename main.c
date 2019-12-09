@@ -12,12 +12,14 @@
 
 int main()
 {
-    printf("\033[0;36m");
+    // printf("\033[0;36m");
 
     int error_code = start_analysis();
     
-    printf("ANALYSIS ENDED WITH ERROR CODE: %i\n", error_code);
+    
+    // printf("\033[0;35m");
+    // printf("ANALYSIS ENDED WITH ERROR CODE: %i\n", error_code);
 
-    printf("\033[0m"); 
+    // printf("\033[0m"); 
     return error_code;
 }

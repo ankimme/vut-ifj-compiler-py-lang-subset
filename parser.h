@@ -13,7 +13,7 @@
 
 #include "scanner.h"
 #include "symtable.h"
-
+#include "gen_code.h"
 #include <stdbool.h>
 
 /** @def Funkční data potřebná pro syntaktickou analýzu */
@@ -23,6 +23,8 @@ typedef struct
     St_token *backup_token;
     tStack *scanner_stack;
     tSymtable *symtable;
+    tHash_Table_Item *table_l_value;
+    tHash_Table_Item *table_r_value;
     int error_code;
     bool unget_token; // flag který vynutí načíst stejný token znova
     bool load_backup;

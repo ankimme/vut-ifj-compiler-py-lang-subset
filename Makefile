@@ -7,7 +7,7 @@ CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -Werror -pedantic
 LFLAGS = -lm
 DFLAGS = -g -O0 # debug flags
-FILES = main.c scanner.c dynamic_string.c stack.c symtable.c parser.c expressions.c precedent_stack.c
+FILES = main.c scanner.c dynamic_string.c stack.c symtable.c parser.c expressions.c precedent_stack.c gen_code.c
 TEST_FOLDER = test
 TEST_FILES = symtable_test scanner_test dynamic_string_test precedent_stack_test
 
@@ -21,11 +21,19 @@ all: $(PROJECT)
 valgrind: $(PROJECT)
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./$(PROJECT) < $(TEST_FOLDER)/test_input_1.py
 
+gencode: $(PROJECT)
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./$(PROJECT) < $(TEST_FOLDER)/test_input_1.py > ifj19code.txt
+	@echo "\033[36m"
+	cat ifj19code.txt
+	@echo "\033[92m"
+	./ic19int ifj19code.txt
+	@echo "\033[0m"
+
 doc:
 	doxygen Doxyfile
 
 clean:
-	rm -f *.out *.o $(PROJECT) $(TEST_FILES)
+	rm -f *.out *.o $(PROJECT) $(TEST_FILES) ifj19code.txt
 
 symtable_test: symtable.c $(TEST_FOLDER)/symtable_test.c
 	$(CC) $(CFLAGS) $(DFLAGS) -o $@ symtable.c $(TEST_FOLDER)/$@.c dynamic_string.c $(LFLAGS)

@@ -1,17 +1,17 @@
-
 /*
  * @file gen_code.h
- * @brief Deklarace funkcí pro generování vıstupního kódu
- * @author Martin Šerı (xserym01@stud.fit.vutbr.cz)
+ * @brief Deklarace funkcÃ­ pro generovÃ¡nÃ­ vÃ½stupnÃ­ho kÃ³du
+ * @author Martin Å erÃ½ (xserym01@stud.fit.vutbr.cz)
  * @date 04.12.2019
  *
- * Projekt: Implementace pøekladaèe imperativního jazyka IFJ19 (varianta II)
+ * Projekt: Implementace pÅ™ekladaÄe imperativnÃ­ho jazyka IFJ19 (varianta II)
  * VUT FIT
  */
 
 #ifndef GEN_CODE_H
 #define GEN_CODE_H
 
+#include "parser.h"
 #include <stdio.h>
 
 #define HEADER \
@@ -115,6 +115,8 @@ void generate_return_for_function(char* value);
 
 void generate_variable_declaration(char* variable);
 
+void generate_pops_variable(char* variable);
+
 void generate_value_type(int type);
 
 void generate_func_variables(char* name, char* value);
@@ -137,7 +139,7 @@ void generate_concat();
 
 void generate_print();
 
-void generate_pushs(char* variable);
+void generate_pushs(char* variable, Token_type type);
 
 void generate_pops();
 
