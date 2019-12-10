@@ -12,27 +12,20 @@
 
 void generate_build_in_functions() 
 {
-//	printf("%s", INPUTS);
-//	printf("%s", INPUTI);
-//	printf("%s", INPUTF);
-//  printf("%s", CHAR);
-//	printf("%s", LENGTH);
+	printf("%s", INPUTS);
+	printf("%s", INPUTI);
+	printf("%s", INPUTF);
+	printf("%s", CHR);
+	printf("%s", LEN);
 	printf("%s", PRINT);
 //  printf("%s", ORD);
 //	printf("%s", SUBSTRING);
-
-}
-
-void generate_build_in_print()
-{
-	printf("%s", PRINT);
 }
 
 void generate_header() 
 {
 	printf("%s", HEADER);
 }
-
 
 void generate_main_header()
 {
@@ -47,12 +40,10 @@ void generate_main_footer()
 	printf("%s", "CLEARS\n");
 }
 
-void generate_function_arg() 
+void generate_function_createframe() 
 {
 	printf("%s", "CREATEFRAME\n");
 }
-
-
 
 void generate_function_pass_arg_stack(int tempName)
 {
@@ -71,22 +62,12 @@ void generate_function_pass_arg_stack(int tempName)
 	printf("%s", "\n");*/
 }
 
-
-
-
 void start_generating()
 {
 	generate_header();
+	generate_build_in_functions();
 	generate_main_header();
-
-	
-
-	//generate_function_arg();
-	//generate_function_pass_arg("AAA", 1);
-	//generate_build_in_functions();
-	//generate_main_footer();
 }
-
 
 void generate_function_start(char* function_name)
 {
@@ -102,7 +83,6 @@ void generate_function_end(char* function_name)
 	printf("%s", function_name);
 	printf("%s", "return");
 	printf("%s", "\n");
-	printf("%s", "POPFRAME\n");
 	printf("%s", "RETURN\n");
 }
 
@@ -113,10 +93,14 @@ void generate_call_for_function(char* function_name)
 	printf("%s", "\n");
 }
 
-/*void generate_return_for_function(char* value)
+void generate_store_return(char * variable)
 {
-	printf("%s", "DEFVAR LF@return\n");
-}*/
+	printf("%s","MOVE ");
+	printf("%s","GF@");
+	printf("%s",variable);
+	printf("%s"," TF@%return");
+	printf("%s", "\n");
+}
 
 void generate_variable_declaration(char* variable)
 {
@@ -130,30 +114,54 @@ void generate_pops_variable(char* variable)
 	printf("%s", "POPS GF@");
 	printf("%s", variable);
 	printf("%s", "\n");
+
+	// printf("%s", "WRITE GF@"); // todo delete
+	// printf("%s", variable); // todo delete
+	// printf("%s", "\n"); // todo delete
 }
 
-
-
-/*void generate_value_type(int type)
+void generate_pass_arg_to_func(char* variable, Token_type type, int index)
 {
+	float getval;
+	
+	printf("%s", "DEFVAR TF@%");
+	printf("%d", index);
+	printf("%s", "\n");
+
+
+	printf("%s", "MOVE TF@%");
+	printf("%d", index);
+	printf("%s", " ");
+
 	switch (type)
 	{
-	case 1:
-		printf("%s", "int@");
-		printf("%s", "\n");
-		return;
-	case 2:
-		printf("%s", "float@");
-		printf("%s", "\n");
-		return;
-	case 3:
-		printf("%s", "string@");
-		printf("%s", "\n");
-		return;
-		
+		case TOKEN_STRING_LITERAL:
+			printf("%s", "string@");
+			printf("%s", variable);
+			break;
+		case TOKEN_INTEGER:
+			printf("%s", "int@");
+			printf("%s", variable);
+			break;
+		case TOKEN_DOUBLE:
+			getval = atof(variable);
+			sprintf(variable,"%a", getval);
+			printf("%s", "float@");
+			printf("%s", variable);
+			break;
+		case TOKEN_KEYWORD:
+			printf("%s", "nil@nil");
+			break;
+		case TOKEN_IDENTIFIER:
+			printf("%s", "GF@");
+			printf("%s", variable);
+			break;
+		default:
+			// raise error
+			break;
 	}
-}*/
-
+	printf("%s", "\n");
+}
 
 void generate_func_variables(char* name, char*value)
 {
@@ -199,31 +207,12 @@ void conv_float_to_int_stack()
 	printf("%s", "FLOAT2INTS\n");
 }
 
-// void conv_int_to_float_stack_2()
-// {
-// 	printf("%s", "POPS GF@variable1");
-// 	printf("%s", "INT2FLOATS");
-// 	printf("%s", "PUSHS GF@variable1");
-// } DELETE
-
-// void conv_float_to_int_stack_2()
-// {
-// 	printf("%s", "POPS GF@variable1");
-// 	printf("%s", "FLOAT2INTS");
-// 	printf("%s", "PUSHS GF@variable1");
-// } DELETE
-
 void generate_concat()
 {
 	printf("%s", "POPS GF@variable1");
 	printf("%s", "POPS GF@variable2");
 	printf("%s", "CONCAT GF@result GF@variable2 GF@variable1");
 	printf("%s", "PUSHS GF@result");
-}
-
-void generate_print()
-{
-	printf("%s", "WRITE GF@variable");
 }
 
 void generate_pushs(char* variable, Token_type type)
@@ -250,7 +239,6 @@ void generate_pushs(char* variable, Token_type type)
 			printf("%s", "PUSHS nil@nil");
 			break;
 		case TOKEN_IDENTIFIER:
-			// generate_variable_declaration(variable);
 			printf("%s", "PUSHS GF@");
 			printf("%s", variable);
 			break;
@@ -258,7 +246,6 @@ void generate_pushs(char* variable, Token_type type)
 			// raise error
 			break;
 	}
-	// printf("%s", variable);
 	printf("%s", "\n");
 }
 
@@ -323,10 +310,7 @@ void generate_LTEQ()
 	printf("%s","PUSHS GF@variable2\n");
 	printf("EQS");
 	printf("ORS");
-
-
 }
-
 
 void generate_GTEQ()
 {
@@ -339,8 +323,6 @@ void generate_GTEQ()
 	printf("%s","PUSHS GF@variable1\n");
 	printf("EQS");
 	printf("ORS");
-
-
 }
 
 void if_statement(char* function)

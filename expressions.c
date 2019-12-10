@@ -236,10 +236,10 @@ void post_order_gen_code(tParser_data* parser_data, tNodeData *node)
     post_order_gen_code(parser_data, node->lptr);
     post_order_gen_code(parser_data, node->rptr);
 
-    process_node(/*parser_data,*/ node);
+    process_node(node);
 }
 
-void process_node(/*tParser_data* parser_data,*/ tNodeData *item)
+void process_node(tNodeData *item)
 {
     // tHash_Table_Item *ht_item;
     switch (item->value_type)
@@ -316,24 +316,13 @@ void process_node(/*tParser_data* parser_data,*/ tNodeData *item)
                     generate_pushs(item->attribute->str, item->value_type);
                 }
 
-                // pretypovani int na float
-                if (item->retype)
-                {
-                    conv_int_to_float_stack();
-                }
+            }
+            if (item->retype)
+            {
+                conv_int_to_float_stack();
             }
             break;
-        // case TOKEN_IDENTIFIER:
-            // ht_item = st_search_entry(parser_data->symtable, item->attribute);
-            // if (ht_item)
-            // {
-            //     generate_pushs(item->attribute->str);
-            // }
-            // generate_pushs(item->attribute->str, item->value_type);
-            // if (item->retype)
-            // {
-            //     conv_int_to_float_stack();
-            // }
+            
         default:
             break;
     }
@@ -720,6 +709,7 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
         case TOKEN_KEYWORD:
         case TOKEN_INTEGER:
         case TOKEN_DOUBLE:
+        case TOKEN_STRING_LITERAL:
             if (l_value == TOKEN_LEFT_BRACKET && r_value == TOKEN_RIGHT_BRACKET)
             {
                 //vyhodí pravou závorku
@@ -813,6 +803,7 @@ bool semantic_node_rule(tParser_data* parser_data, tPrec_stack* prec_stack, tSym
         case TOKEN_KEYWORD:
         case TOKEN_INTEGER:
         case TOKEN_DOUBLE:
+        case TOKEN_STRING_LITERAL:
             if(check_operands_type(parser_data, prec_stack, left_sym, middle_sym, right_sym))
             {
                 return true;

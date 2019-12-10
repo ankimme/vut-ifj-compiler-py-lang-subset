@@ -118,8 +118,8 @@ bool init_parser_data(tParser_data *parser_data)
     string_append(entry_inputi, "inputi");
     tFunctionData *data_inputi = malloc(sizeof(tFunctionData));
     // todo
-    data_inputs->params_count = 0;
-    data_inputs->return_type = TYPE_INT;
+    data_inputi->params_count = 0;
+    data_inputi->return_type = TYPE_INT;
     st_insert_entry_in_current_context(parser_data->symtable, entry_inputi, data_inputi, HT_TYPE_FUNCTION);
 
 
@@ -134,6 +134,30 @@ bool init_parser_data(tParser_data *parser_data)
     st_insert_entry_in_current_context(parser_data->symtable, entry_inputf, data_inputf, HT_TYPE_FUNCTION);
 
 
+    // vlozeni len entry do tabulky symbolu
+    tKey entry_len = malloc(sizeof(dynamic_string));
+    string_init(entry_len);
+    string_append(entry_len, "len");
+    tFunctionData *data_len = malloc(sizeof(tFunctionData));
+    // todo
+    data_len->params_count = 1;
+    data_len->return_type = TYPE_INT;
+    st_insert_entry_in_current_context(parser_data->symtable, entry_len, data_len, HT_TYPE_FUNCTION);
+
+
+    // vlozeni chr entry do tabulky symbolu
+    tKey entry_chr = malloc(sizeof(dynamic_string));
+    string_init(entry_chr);
+    string_append(entry_chr, "chr");
+    tFunctionData *data_chr = malloc(sizeof(tFunctionData));
+    // todo
+    data_chr->params_count = 1;
+    data_chr->return_type = TYPE_STRING;
+    st_insert_entry_in_current_context(parser_data->symtable, entry_chr, data_chr, HT_TYPE_FUNCTION);
+
+
+    // inicializace pomocne promenne pro uchovani poctu parametru u volane funkce
+    parser_data->fun_call_param_count = 0;
 
     // inicializace error kodu
     parser_data->error_code = 0;
@@ -1150,9 +1174,13 @@ bool instruct(tParser_data *parser_data)
         return false;
     }
 
-    // token je "(" -> pravidlo 20
+    // token je "(" -> pravidlo 20 (volani funkce na radku)
     if (parser_data->current_token->type == TOKEN_LEFT_BRACKET)
     {
+        // vynulovani poctu parametru u volane funkce
+        parser_data->fun_call_param_count = 0;
+        generate_function_createframe();
+
         // musi nasledovat neterminal TERM
         get_token_and_set_error_code(parser_data);
         if (!term(parser_data))
@@ -1165,6 +1193,16 @@ bool instruct(tParser_data *parser_data)
         {
             return false;
         }
+
+        // kontrola poctu parametru funkce
+        if (parser_data->table_l_value->fun_data->params_count != parser_data->fun_call_param_count)
+        {
+            set_error_code(parser_data, PARAMS_SEMANTIC_ERROR);
+            return false;
+        }
+
+        // zavolani funkce
+        generate_call_for_function(parser_data->table_l_value->key->str);
     }
     // token je "=" -> pravidlo 19
     else if (parser_data->current_token->type == TOKEN_ASSIGNMENT)
@@ -1212,11 +1250,21 @@ bool instruct_continue(tParser_data *parser_data)
         if (parser_data->current_token->type == TOKEN_LEFT_BRACKET)
         {
             // identifikator neni definovany nebo je promenna
-            if (parser_data->table_r_value == NULL || parser_data->table_r_value->type == HT_TYPE_VARIABLE)
+            if (parser_data->table_r_value == NULL || parser_data->table_r_value->type != HT_TYPE_FUNCTION)
             {
                 set_error_code(parser_data, DEFINITION_SEMANTIC_ERROR);
                 return false;
             }
+
+            // pokud promenna nebyla definovana tak se definuje
+            if (parser_data->table_l_value->var_data->type == UNDEFINED)
+            {
+                generate_variable_declaration (parser_data->table_l_value->key->str);
+            }
+
+            // vynulovani poctu parametru u volane funkce
+            parser_data->fun_call_param_count = 0;
+            generate_function_createframe();
 
             // musi nasledovat neterminal TERM
             get_token_and_set_error_code(parser_data);
@@ -1230,6 +1278,21 @@ bool instruct_continue(tParser_data *parser_data)
             {
                 return false;
             }
+            
+            // kontrola poctu parametru funkce
+            if (parser_data->table_r_value->fun_data->params_count != parser_data->fun_call_param_count)
+            {
+                set_error_code(parser_data, PARAMS_SEMANTIC_ERROR);
+                return false;
+            }
+
+            // zavolani funkce
+            generate_call_for_function(parser_data->table_r_value->key->str);
+
+            
+            generate_store_return(parser_data->table_l_value->key->str);
+
+            parser_data->table_l_value->var_data->type = parser_data->table_r_value->fun_data->return_type;
 
             parser_data->table_r_value = NULL; // TODO overit jestli to zde opravdu ma byt -> musi se zajistit aby se table_r_value po volani funkce vratil na null, otazka je jestli to udelat zde
         }
@@ -1335,6 +1398,11 @@ bool term(tParser_data *parser_data)
         // token je "None" -> pravidlo 25
         if (strcmp(parser_data->current_token->attribute->str, "None") == 0)
         {
+            // pocitadlo++
+            parser_data->fun_call_param_count++;
+            // defvar, move
+            generate_pass_arg_to_func("None", TOKEN_KEYWORD, parser_data->fun_call_param_count);
+
             // musi nasledovat neterminal TERM_N
             get_token_and_set_error_code(parser_data);
             if (!term_n(parser_data))
@@ -1351,6 +1419,31 @@ bool term(tParser_data *parser_data)
     // token je identifikator -> pravidlo 23
     else if (parser_data->current_token->type == TOKEN_IDENTIFIER)
     {
+        // pocitadlo++
+        parser_data->fun_call_param_count++;
+
+        tHash_Table_Item *item = st_search_entry(parser_data->symtable, parser_data->current_token->attribute);
+        // kontrola ze identifikator je definovany
+        if (item == NULL)
+        {
+            set_error_code(parser_data, DEFINITION_SEMANTIC_ERROR);
+            return false;
+        }
+        // kontrola ze identifikator je promenna
+        if (item->type != HT_TYPE_VARIABLE)
+        {
+            set_error_code(parser_data, DEFINITION_SEMANTIC_ERROR);
+            return false;
+        }
+        // kontrola ze identifikator je promenna a ma definovany datovy typ (aka byla inicializovana uspesne)
+        if (item->var_data->type == UNDEFINED)
+        {
+            set_error_code(parser_data, DEFINITION_SEMANTIC_ERROR);
+            return false;   
+        }
+        // defvar, move
+        generate_pass_arg_to_func(item->key->str, TOKEN_IDENTIFIER, parser_data->fun_call_param_count);
+
         // musi nasledovat neterminal TERM_N
         get_token_and_set_error_code(parser_data);
         if (!term_n(parser_data))
@@ -1368,11 +1461,15 @@ bool term(tParser_data *parser_data)
     else if (parser_data->current_token->type == TOKEN_STRING_LITERAL || parser_data->current_token->type == TOKEN_INTEGER || parser_data->current_token->type == TOKEN_DOUBLE)
     {
         // musi nasledovat neterminal TYPE
-        //get_token_and_set_error_code(parser_data); // DELETE TODO smazat tento radek ? nejlevejsi derivace
         if (!type(parser_data))
         {
             return false;
         }
+
+        // pocitadlo++
+        parser_data->fun_call_param_count++;
+        // defvar, move
+        generate_pass_arg_to_func(parser_data->current_token->attribute->str, parser_data->current_token->type, parser_data->fun_call_param_count);
 
         // musi nasledovat neterminal TERM_N
         get_token_and_set_error_code(parser_data);
@@ -1437,6 +1534,11 @@ bool term_n_value(tParser_data *parser_data)
         // token je "None" -> pravidlo 31
         if (strcmp(parser_data->current_token->attribute->str, "None") == 0)
         {
+            // pocitadlo++
+            parser_data->fun_call_param_count++;
+            // defvar, move
+            generate_pass_arg_to_func("None", TOKEN_KEYWORD, parser_data->fun_call_param_count);
+
             // musi nasledovat neterminal TERM_N
             get_token_and_set_error_code(parser_data);
             if (!term_n(parser_data))
@@ -1453,6 +1555,31 @@ bool term_n_value(tParser_data *parser_data)
     // token je identifikator -> pravidlo 29
     else if (parser_data->current_token->type == TOKEN_IDENTIFIER)
     {
+        // pocitadlo++
+        parser_data->fun_call_param_count++;
+
+        tHash_Table_Item *item = st_search_entry(parser_data->symtable, parser_data->current_token->attribute);
+        // kontrola ze identifikator je definovany
+        if (item == NULL)
+        {
+            set_error_code(parser_data, DEFINITION_SEMANTIC_ERROR);
+            return false;
+        }
+        // kontrola ze identifikator je promenna
+        if (item->type != HT_TYPE_VARIABLE)
+        {
+            set_error_code(parser_data, DEFINITION_SEMANTIC_ERROR);
+            return false;
+        }
+        // kontrola ze identifikator je promenna a ma definovany datovy typ (aka byla inicializovana uspesne)
+        if (item->var_data->type == UNDEFINED)
+        {
+            set_error_code(parser_data, DEFINITION_SEMANTIC_ERROR);
+            return false;   
+        }
+        // defvar, move
+        generate_pass_arg_to_func(item->key->str, TOKEN_IDENTIFIER, parser_data->fun_call_param_count);
+
         // musi nasledovat neterminal TERM_N
         get_token_and_set_error_code(parser_data);
         if (!term_n(parser_data))
@@ -1464,11 +1591,15 @@ bool term_n_value(tParser_data *parser_data)
     else if (parser_data->current_token->type == TOKEN_STRING_LITERAL || parser_data->current_token->type == TOKEN_INTEGER || parser_data->current_token->type == TOKEN_DOUBLE)
     {
         // musi nasledovat neterminal TYPE
-        //get_token_and_set_error_code(parser_data); // DELETE
         if (!type(parser_data))
         {
             return false;
         }
+
+        // pocitadlo++
+        parser_data->fun_call_param_count++;
+        // defvar, move
+        generate_pass_arg_to_func(parser_data->current_token->attribute->str, parser_data->current_token->type, parser_data->fun_call_param_count);
 
         // musi nasledovat neterminal TERM_N
         get_token_and_set_error_code(parser_data);

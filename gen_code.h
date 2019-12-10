@@ -22,36 +22,52 @@
 
 #define INPUTS \
 	"LABEL _inputs\n" \
-    "READ GF@return string\n" \
+	"PUSHFRAME\n"\
+	"DEFVAR LF@%return\n"\
+    "READ LF@%return string\n" \
+	"POPFRAME\n"\
     "RETURN\n" \
 
 #define INPUTI \
 	"LABEL _inputi\n" \
-	"READ GF@return int\n" \
+	"PUSHFRAME\n"\
+	"DEFVAR LF@%return\n"\
+	"READ LF@%return int\n" \
+	"POPFRAME\n"\
 	"RETURN\n" \
 
 #define INPUTF \
 	"LABEL _inputf\n" \
-	"READ GF@return float\n" \
+	"PUSHFRAME\n"\
+	"DEFVAR LF@%return\n"\
+	"READ LF@%return float\n" \
+	"POPFRAME\n"\
 	"RETURN\n" \
 
-#define CHAR \
+#define CHR \
 	"LABEL _chr\n" \
 	"PUSHFRAME\n" \
 	"DEFVAR LF@type\n"\
-	"DEFVAR LF@return\n"\
-	"TYPE LF@type LF@input\n"\
-	"JUMPIFEQ chr_continue LF@type int\n"\
+	"DEFVAR LF@param1\n"\
+	"DEFVAR LF@%return\n"\
+	"DEFVAR LF@exp_type\n"\
+	"MOVE LF@param1 LF@%1\n"\
+	"MOVE LF@exp_type string@int\n"\
+	"TYPE LF@type LF@param1\n"\
+	"JUMPIFEQ _chr_continue LF@type LF@exp_type\n"\
 	"EXIT int@4\n"\
 	"LABEL _chr_continue\n"\
-	"INT2CHAR LF@return LF@input\n"\
+	"INT2CHAR LF@%return LF@param1\n"\
 	"POPFRAME\n"\
 	"RETURN\n"\
 
-#define LENGTH \
-	"LABEL _length\n" \
+#define LEN \
+	"LABEL _len\n" \
 	"PUSHFRAME\n" \
-	"STRLEN GF@return LF@input\n" \
+	"DEFVAR LF@%return\n"\
+	"DEFVAR LF@param1\n"\
+	"MOVE LF@param1 LF@%1\n"\
+	"STRLEN LF@%return LF@param1\n" \
 	"POPFRAME\n" \
 	"RETURN\n"\
 
@@ -91,7 +107,9 @@
 #define PRINT \
 	"LABEL _print\n" \
 	"PUSHFRAME\n" \
-	"WRITE LF@input\n" \
+	"DEFVAR LF@param1\n"\
+	"MOVE LF@param1 LF@%1\n"\
+	"WRITE LF@param1\n" \
 	"POPFRAME\n" \
 	"RETURN\n" \
 
@@ -105,6 +123,8 @@ void generate_main_header();
 
 void generate_main_footer();
 
+void generate_store_return(char * variable);
+
 void generate_function_start(char* function_name);
 
 void generate_function_end(char* function_name);
@@ -117,9 +137,11 @@ void generate_function_pass_arg_stack(int tempName);
 
 void generate_variable_declaration(char* variable);
 
+void generate_function_createframe();
+
 void generate_pops_variable(char* variable);
 
-void generate_value_type(int type);
+void generate_pass_arg_to_func(char* variable, Token_type type, int index);
 
 void generate_func_variables(char* name, char* value);
 
