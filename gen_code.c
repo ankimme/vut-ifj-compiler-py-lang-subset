@@ -23,6 +23,11 @@ void generate_build_in_functions()
 
 }
 
+void generate_build_in_print()
+{
+	printf("%s", PRINT);
+}
+
 void generate_header() 
 {
 	printf("%s", HEADER);
@@ -47,22 +52,34 @@ void generate_function_arg()
 	printf("%s", "CREATEFRAME\n");
 }
 
-void generate_function_pass_arg(char* param, int functionID)
+
+
+void generate_function_pass_arg_stack(int tempName)
 {
 	printf("%s", "DEFVAR TF@");
-	printf("%d", functionID);
+	printf("%d", tempName);
 	printf("%s", "\n");
-	printf("%s", "MOVE TF@");
-	printf("%d", functionID);
+
+	printf("%s", "POPS TF@");
+	printf("%d", tempName);
+	printf("%s", "\n");
+
+	/*printf("%s", "MOVE TF@");
+	printf("%d", tempName);
 	printf("%s", " ");
 	printf("%s", param);
-	printf("%s", "\n");
+	printf("%s", "\n");*/
 }
+
+
+
 
 void start_generating()
 {
 	generate_header();
 	generate_main_header();
+
+	
 
 	//generate_function_arg();
 	//generate_function_pass_arg("AAA", 1);
@@ -103,7 +120,7 @@ void generate_call_for_function(char* function_name)
 
 void generate_variable_declaration(char* variable)
 {
-	printf("%s", "DEFVAR GF@"); // zeptat se Sama
+	printf("%s", "DEFVAR GF@");
 	printf("%s", variable);
 	printf("%s", "\n");
 }
@@ -117,7 +134,7 @@ void generate_pops_variable(char* variable)
 
 
 
-void generate_value_type(int type)
+/*void generate_value_type(int type)
 {
 	switch (type)
 	{
@@ -133,8 +150,9 @@ void generate_value_type(int type)
 		printf("%s", "string@");
 		printf("%s", "\n");
 		return;
+		
 	}
-}
+}*/
 
 
 void generate_func_variables(char* name, char*value)
@@ -210,6 +228,8 @@ void generate_print()
 
 void generate_pushs(char* variable, Token_type type)
 {
+	float getval;
+
 	switch (type)
 	{
 		case TOKEN_STRING_LITERAL:
@@ -221,12 +241,18 @@ void generate_pushs(char* variable, Token_type type)
 			printf("%s", variable);
 			break;
 		case TOKEN_DOUBLE:
-			// printf("%", "WRITE ");
+			getval = atof(variable);
+			sprintf(variable,"%a", getval);
 			printf("%s", "PUSHS float@");
 			printf("%s", variable);
 			break;
 		case TOKEN_KEYWORD:
 			printf("%s", "PUSHS nil@nil");
+			break;
+		case TOKEN_IDENTIFIER:
+			// generate_variable_declaration(variable);
+			printf("%s", "PUSHS GF@");
+			printf("%s", variable);
 			break;
 		default:
 			// raise error

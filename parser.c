@@ -827,8 +827,7 @@ bool sequence(tParser_data *parser_data)
             parser_data->table_l_value = st_search_entry(parser_data->symtable, key);
         }
 
-        // TODO symtable
-        if (!copy_token(parser_data, parser_data->current_token, parser_data->backup_token)) // todo
+        if (!copy_token(parser_data, parser_data->current_token, parser_data->backup_token))
         {
             return false;
         }
@@ -838,12 +837,6 @@ bool sequence(tParser_data *parser_data)
         // token je "(" nebo "=" -> pravidlo 12
         if (parser_data->current_token->type == TOKEN_LEFT_BRACKET || parser_data->current_token->type == TOKEN_ASSIGNMENT)
         {
-            // // "(" po neinicializovanem identifikatoru
-            // if (parser_data->table_l_value-> == HT_TYPE_UNDEFINED && parser_data->current_token->type == TOKEN_LEFT_BRACKET)
-            // {
-            //     set_error_code(parser_data, DEFINITION_SEMANTIC_ERROR);
-            //     return false;
-            // }
             // "(" po promenne
             if (parser_data->table_l_value->type == HT_TYPE_VARIABLE && parser_data->current_token->type == TOKEN_LEFT_BRACKET)
             {
@@ -886,7 +879,7 @@ bool sequence(tParser_data *parser_data)
             pom = NULL;
             parser_data->load_backup = true;
 
-
+            parser_data->table_l_value = NULL;
 
             // musi nasledovat expression
             // get_token_and_set_error_code(parser_data); DELETE
@@ -1250,7 +1243,10 @@ bool instruct_continue(tParser_data *parser_data)
             parser_data->load_backup = true;
 
 
-            generate_variable_declaration (parser_data->table_l_value->key->str);
+            if (parser_data->table_l_value->var_data->type == UNDEFINED)
+            {
+                generate_variable_declaration (parser_data->table_l_value->key->str);
+            }
 
             // musi nasledovat expression
             // get_token_and_set_error_code(parser_data); DELETE
@@ -1265,7 +1261,10 @@ bool instruct_continue(tParser_data *parser_data)
     }
     else
     {
-        generate_variable_declaration (parser_data->table_l_value->key->str);
+        if (parser_data->table_l_value->var_data->type == UNDEFINED)
+        {
+            generate_variable_declaration (parser_data->table_l_value->key->str);
+        }
 
         // musi nasledovat expression
         // get_token_and_set_error_code(parser_data); DELETE

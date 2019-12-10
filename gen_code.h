@@ -113,6 +113,8 @@ void generate_call_for_function(char* function_name);
 
 void generate_return_for_function(char* value);
 
+void generate_function_pass_arg_stack(int tempName);
+
 void generate_variable_declaration(char* variable);
 
 void generate_pops_variable(char* variable);

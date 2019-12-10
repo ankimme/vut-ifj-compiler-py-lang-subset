@@ -16,14 +16,14 @@
 #include "precedent_stack.h"
 
 #include <stdbool.h>
+#include <stdlib.h>
+
 
 /**
  *
  * @enum Prec_rule.
  * @brief Pravidla pro precedenční analýzu.
- *
  */
-
 typedef enum
 {
     /*  Výraz s binárním/aritmetickým/řetězcovým operátorem  */
@@ -49,12 +49,36 @@ typedef enum
 
 }Prec_rule;
 
-
+/**
+ * Prochází vygenerovaný abstraktní sématický strom metodou post order a volá zpracování jednotlivých uzlů
+ * 
+ * @param parser_data Ukazatel na strukturu tParser_data
+ * @param node Odkaz na data kořenového uzlu
+ */
 void post_order_gen_code(tParser_data* parser_data, tNodeData *node);
 
-void process_node(/*tParser_data* parser_data,*/ tNodeData *item);
+/**
+ * Zpracuje uzel abstratního derivačního stromu a vygeneruje příslušné instrukce v jazyce ifj19code
+ * 
+ * @param node Odkaz na data zpracovávaný
+ */
+void process_node(tNodeData *item);
 
+/**
+ * Vyčistí pomocný precedenční zásobník, nastaví flag unget_token a odstraní jeden kontext z tabulky symbolů
+ * 
+ * @param parser_data Ukazatel na strukturu tParser_data
+ * @param prec_stack Ukazatel na strukturu tPrec_Stack
+ */
 void clean_resources(tParser_data* parser_data, tPrec_stack* prec_stack);
+
+/**
+ * Zkontroluje jestli je identifikátor proměnná a jestli je definovaná
+ * 
+ * @param parser_data Ukazatel na strukturu tParser_data
+ * @return true v případě že je identifikátor platný, jinak false
+ */
+bool search_variable_in_symtable(tParser_data* parser_data);
 
 bool process_types_no_retype(tParser_data* parser_data, tPrec_stack* prec_stack, tSymbol symb_rule, tNodeData* l_ptr, tNodeData* r_ptr, tSymbol next, int retype, Prec_stack_symbol type, Token_type value_type, char* str);
 
@@ -74,7 +98,7 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
 
 bool semantic_node_value(tParser_data* parser_data, tSymbol value, tSymbol backup);
 
-bool semantic_node_rule(tParser_data* parser_data, tPrec_stack* prec_stack, tSymbol left_sym, tSymbol middle_sym, tSymbol right_sym);
+bool derive_rule(tParser_data* parser_data, tPrec_stack* prec_stack, tSymbol val, tNodeData* l_ptr, tNodeData* r_ptr);
 
 Prec_token process_terminal(tPrec_stack* prec_stack);
 

@@ -38,7 +38,34 @@ void clean_resources(tParser_data* parser_data, tPrec_stack* prec_stack)
     tPrec_stack_clean(prec_stack);
     parser_data->unget_token = true;
     st_dedent(parser_data->symtable);
+    parser_data->table_r_value = NULL;
 }
+
+bool search_variable_in_symtable(tParser_data* parser_data)
+{
+    parser_data->table_r_value = st_search_entry(parser_data->symtable, parser_data->current_token->attribute);
+
+    if (parser_data->table_r_value == NULL)
+    {
+        set_error_code(parser_data, DEFINITION_SEMANTIC_ERROR);
+        return false;
+    }
+    
+    if (parser_data->table_r_value->type != HT_TYPE_VARIABLE)
+    {
+        set_error_code(parser_data, DEFINITION_SEMANTIC_ERROR);
+        return false;
+    }
+
+    if (parser_data->table_r_value->var_data->type == UNDEFINED)
+    {
+        set_error_code(parser_data, DEFINITION_SEMANTIC_ERROR);
+        return false;
+    }
+
+    return true;
+}
+
 
 bool process_types_no_retype(tParser_data* parser_data, tPrec_stack* prec_stack, tSymbol symb_rule, tNodeData* l_ptr, tNodeData* r_ptr, tSymbol next, int retype, Prec_stack_symbol type, Token_type value_type, char* str)
 {
@@ -166,7 +193,10 @@ tNodeData* st_create_node(tSymtable *symtable, tSymbol symbol, tNodeData *lptr, 
     tNodeData *data = malloc(sizeof(tNodeData));
     data->attribute = malloc(sizeof(dynamic_string));
     string_init(data->attribute);
-    string_append(data->attribute, symbol->attribute->str);
+    if(!string_append(data->attribute, symbol->attribute->str))
+    {
+        return NULL;
+    }
     data->retype = symbol->retype;
     data->value_type = symbol->value_type;
     data->lptr = lptr;
@@ -218,6 +248,7 @@ void process_node(/*tParser_data* parser_data,*/ tNodeData *item)
         case TOKEN_DOUBLE:
         case TOKEN_STRING_LITERAL:
         case TOKEN_KEYWORD:
+        case TOKEN_IDENTIFIER:
             // dosel uzel scitani
             if (strcmp(item->attribute->str, "+") == 0)
             {
@@ -268,10 +299,23 @@ void process_node(/*tParser_data* parser_data,*/ tNodeData *item)
             {
                 generate_GTS();
             }
-            // doslo cislo
+            // doslo cislo nebo promenna
             else
             {
-                generate_pushs(item->attribute->str, item->value_type);
+                if (item->value_type == TOKEN_KEYWORD)
+                {
+                    generate_pushs(item->attribute->str, TOKEN_KEYWORD);
+                }
+                // prvni znak je a-zA-Z_ -> jedna se o identifikator
+                else if ((item->attribute->str[0] >= 65 && item->attribute->str[0] <= 90) || (item->attribute->str[0] >= 97 && item->attribute->str[0] <= 122) || (item->attribute->str[0] == '_'))
+                {
+                    generate_pushs(item->attribute->str, TOKEN_IDENTIFIER);
+                }
+                else
+                {
+                    generate_pushs(item->attribute->str, item->value_type);
+                }
+
                 // pretypovani int na float
                 if (item->retype)
                 {
@@ -279,17 +323,17 @@ void process_node(/*tParser_data* parser_data,*/ tNodeData *item)
                 }
             }
             break;
-        case TOKEN_IDENTIFIER:
+        // case TOKEN_IDENTIFIER:
             // ht_item = st_search_entry(parser_data->symtable, item->attribute);
             // if (ht_item)
             // {
             //     generate_pushs(item->attribute->str);
             // }
-            generate_pushs(item->attribute->str, item->value_type);
-            if (item->retype)
-            {
-                conv_int_to_float_stack();
-            }
+            // generate_pushs(item->attribute->str, item->value_type);
+            // if (item->retype)
+            // {
+            //     conv_int_to_float_stack();
+            // }
         default:
             break;
     }
@@ -895,15 +939,38 @@ bool process_prec_table(tParser_data* parser_data, tPrec_stack* prec_stack, Prec
     switch(table_symbol)    
     {
         case '=':
-            if(!tPrec_stack_push(prec_stack, SYMBOL_TERMINAL, parser_data->current_token->type, parser_data->current_token->attribute->str)) //internal error, pokud se symbol nepodaří vložit na zásobník
+            
+            //vkládání symbolu typu proměnné na zásobník
+            if (parser_data->current_token->type == TOKEN_IDENTIFIER)
             {
-                set_error_code(parser_data, INTERNAL_ERROR);
-                return false;
+                if(!tPrec_stack_push(prec_stack, SYMBOL_TERMINAL, parser_data->table_r_value->var_data->type, parser_data->table_r_value->key->str)) //internal error, pokud se symbol nepodaří vložit na zásobník
+                {
+                    set_error_code(parser_data, INTERNAL_ERROR);
+                    return false;
+                }        
             }
+            //vkládání jiného symbolu na zásobník
+            else
+            {
+                if(!tPrec_stack_push(prec_stack, SYMBOL_TERMINAL, parser_data->current_token->type, parser_data->current_token->attribute->str)) //internal error, pokud se symbol nepodaří vložit na zásobník
+                {
+                    set_error_code(parser_data, INTERNAL_ERROR);
+                    return false;
+                }    
+            }
+            
             get_token_and_set_error_code(parser_data);
             if (parser_data->error_code != NO_ERROR)
             {
                 return false;
+            }
+
+            if (parser_data->current_token->type == TOKEN_IDENTIFIER)
+            {
+                if (!search_variable_in_symtable(parser_data))
+                {
+                    return false;
+                }
             }
 
             return true;
@@ -923,16 +990,38 @@ bool process_prec_table(tParser_data* parser_data, tPrec_stack* prec_stack, Prec
                 return false;
             }
 
-            if(!tPrec_stack_push(prec_stack, SYMBOL_TERMINAL, parser_data->current_token->type, parser_data->current_token->attribute->str)) //internal error, pokud se symbol nepodaří vložit na zásobník
+            //vkládání symbolu typu proměnné na zásobník
+            if (parser_data->current_token->type == TOKEN_IDENTIFIER)
             {
-                set_error_code(parser_data, INTERNAL_ERROR);
-                return false;
+                if(!tPrec_stack_push(prec_stack, SYMBOL_TERMINAL, parser_data->table_r_value->var_data->type, parser_data->table_r_value->key->str)) //internal error, pokud se symbol nepodaří vložit na zásobník
+                {
+                    set_error_code(parser_data, INTERNAL_ERROR);
+                    return false;
+                }        
             }
+            //vkládání jiného symbolu na zásobník
+            else
+            {
+                if(!tPrec_stack_push(prec_stack, SYMBOL_TERMINAL, parser_data->current_token->type, parser_data->current_token->attribute->str)) //internal error, pokud se symbol nepodaří vložit na zásobník
+                {
+                    set_error_code(parser_data, INTERNAL_ERROR);
+                    return false;
+                }    
+            }
+            
 
             get_token_and_set_error_code(parser_data);
             if (parser_data->error_code != NO_ERROR)
             {
                 return false;
+            }
+
+            if (parser_data->current_token->type == TOKEN_IDENTIFIER)
+            {
+                if (!search_variable_in_symtable(parser_data))
+                {
+                    return false;
+                }
             }
 
             return true;
@@ -1019,6 +1108,15 @@ bool process_expression(tParser_data* parser_data)
     /*  ZPRACOVÁNÍ VÝRAZU  */
     /***********************/
 
+    if (parser_data->current_token->type == TOKEN_IDENTIFIER)
+    {
+        if (!search_variable_in_symtable(parser_data))
+        {
+            return false;
+        }
+    }
+    
+
     st_indent(parser_data->symtable);
 
     tPrec_stack prec_stack;
@@ -1030,6 +1128,8 @@ bool process_expression(tParser_data* parser_data)
         set_error_code(parser_data, INTERNAL_ERROR);
         return false;
     }
+
+    //todo ověřit první token proměnná
 
     //  ZÍSKÁNÍ INDEXU NA ZÁSOBNÍKU  //
     Prec_token prec_term_type = process_terminal(&prec_stack);
@@ -1064,13 +1164,16 @@ bool process_expression(tParser_data* parser_data)
         }
     } while ((strcmp(term->attribute->str, "$") != 0) || (prec_token_type != PREC_OTHER));
 
-
-    if (parser_data->table_l_value)
+    //přiřazení výsledku výrazu do proměnné (nebo nikam), v případě pokusu o přířazení bool hodnoty, sémantická chyba
+    if (parser_data->table_l_value != NULL)
     {
         parser_data->table_l_value->var_data->type = (&prec_stack)->top->item->value_type;
+
+        // přiřadila by se bool hodnota, tu my ale nepodporujeme
         if (parser_data->table_l_value->var_data->type == UNDEFINED)
         {
-            set_error_code(parser_data, OTHER_SEMANTIC_ERROR); // priradilo by se bool ale to my nepodporujeme
+            set_error_code(parser_data, OTHER_SEMANTIC_ERROR);
+            clean_resources(parser_data, &prec_stack);
             return false;
         }
     }
