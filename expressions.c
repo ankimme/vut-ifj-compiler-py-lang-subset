@@ -39,6 +39,8 @@ void clean_resources(tParser_data* parser_data, tPrec_stack* prec_stack)
     parser_data->unget_token = true;
     st_dedent(parser_data->symtable);
     parser_data->table_r_value = NULL;
+    parser_data->convert_relation_types = false;
+    parser_data->check_relation_expression = false;
 }
 
 bool search_variable_in_symtable(tParser_data* parser_data)
@@ -236,17 +238,16 @@ void post_order_gen_code(tParser_data* parser_data, tNodeData *node)
     post_order_gen_code(parser_data, node->lptr);
     post_order_gen_code(parser_data, node->rptr);
 
-    process_node(node);
+    process_node(parser_data, node);
 }
 
-void process_node(tNodeData *item)
+void process_node(tParser_data* parser_data, tNodeData *item)
 {
     // tHash_Table_Item *ht_item;
     switch (item->value_type)
     {
         case TOKEN_INTEGER:
         case TOKEN_DOUBLE:
-        // case TOKEN_STRING_LITERAL:
         case TOKEN_KEYWORD:
         case TOKEN_IDENTIFIER:
         case UNDEFINED:
@@ -278,27 +279,53 @@ void process_node(tNodeData *item)
             // dosel uzel "=="
             else if (strcmp(item->attribute->str, "==") == 0)
             {
-                generate_EQS();
+                if (parser_data->convert_relation_types == true)
+                {
+                    generate_EQS();
+                }
+                else
+                {
+                    generate_same_type_EQS();
+                }
+                parser_data->check_relation_expression = false; //aby se neprováděla kontrola výsledného typu symbolu v if/while
+            }
+            // dosel uzel "!="
+            else if (strcmp(item->attribute->str, "!=") == 0)
+            {
+                if (parser_data->convert_relation_types == true)
+                {
+                    generate_NEQS();
+                    
+                }
+                else
+                {
+                    generate_same_type_NEQS();
+                }
+                parser_data->check_relation_expression = false;
             }
             // dosel uzel "<="
             else if (strcmp(item->attribute->str, "<=") == 0)
             {
                 generate_LTEQ();
+                parser_data->check_relation_expression = false;
             }
             // dosel uzel ">="
             else if (strcmp(item->attribute->str, ">=") == 0)
             {
                 generate_GTEQ();
+                parser_data->check_relation_expression = false;
             }
             // dosel uzel "<"
             else if (strcmp(item->attribute->str, "<") == 0)
             {
                 generate_LTS();
+                parser_data->check_relation_expression = false;
             }
             // dosel uzel ">"
             else if (strcmp(item->attribute->str, ">") == 0)
             {
                 generate_GTS();
+                parser_data->check_relation_expression = false;
             }
             // doslo cislo nebo promenna
             else
@@ -687,6 +714,30 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
                 return false;
             }
         case TOKEN_EQUAL: // E -> E == E
+            if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
+            {
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">="))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
+            {
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">="))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if ((l_value == TOKEN_STRING_LITERAL) && (r_value == TOKEN_STRING_LITERAL))
+            {
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">="))
+                {
+                    return false;
+                }
+                return true;
+            }
             if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
             {
                 if(!process_types_one_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, l_value, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "=="))
@@ -697,14 +748,39 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
             }
             else
             {
-                //lze porovnávat asi vše
+                //jinak lze porovnávat všechny typy
                 if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "=="))
+                {
+                    return false;
+                }
+                parser_data->convert_relation_types = true;
+                return true;
+            }
+        case TOKEN_NOT_EQUAL: // E -> E != E
+            if ((l_value == TOKEN_INTEGER) && (r_value == TOKEN_INTEGER))
+            {
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">="))
                 {
                     return false;
                 }
                 return true;
             }
-        case TOKEN_NOT_EQUAL: // E -> E != E
+            else if ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_DOUBLE))
+            {
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">="))
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if ((l_value == TOKEN_STRING_LITERAL) && (r_value == TOKEN_STRING_LITERAL))
+            {
+                if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, ">="))
+                {
+                    return false;
+                }
+                return true;
+            }
             if (((l_value == TOKEN_INTEGER) && (r_value == TOKEN_DOUBLE)) || ((l_value == TOKEN_DOUBLE) && (r_value == TOKEN_INTEGER)))
             {
                 if(!process_types_one_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, l_value, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "!="))
@@ -715,11 +791,12 @@ bool check_operands_type(tParser_data* parser_data, tPrec_stack* prec_stack, tSy
             }
             else
             {
-                //lze porovnávat asi vše
+                //lze porovnávat všechny typy
                 if(!process_types_no_retype(parser_data, prec_stack, symb_rule, left_operand->item, right_operand->item, next, 0, SYMBOL_NONTERMINAL, UNDEFINED, "!="))
                 {
                     return false;
                 }
+                parser_data->convert_relation_types = true;
                 return true;
             }
         case TOKEN_IDENTIFIER:
@@ -1129,7 +1206,6 @@ bool process_expression(tParser_data* parser_data)
         return false;
     }
 
-    //todo ověřit první token proměnná
 
     //  ZÍSKÁNÍ INDEXU NA ZÁSOBNÍKU  //
     Prec_token prec_term_type = process_terminal(&prec_stack);
@@ -1164,6 +1240,7 @@ bool process_expression(tParser_data* parser_data)
         }
     } while ((strcmp(term->attribute->str, "$") != 0) || (prec_token_type != PREC_OTHER));
 
+
     //přiřazení výsledku výrazu do proměnné (nebo nikam), v případě pokusu o přířazení bool hodnoty, sémantická chyba
     if (parser_data->table_l_value != NULL)
     {
@@ -1177,7 +1254,18 @@ bool process_expression(tParser_data* parser_data)
             return false;
         }
     }
+
+
     post_order_gen_code(parser_data, (&prec_stack)->top->item);
+
+
+    //zpracovává se if/while a je třeba vyhodnotit pravdivostní hodnotu výrazu bez relačního operátoru
+    if(parser_data->check_relation_expression == true)
+    {
+        generate_compare();
+        parser_data->check_relation_expression = false;
+    }
+
     clean_resources(parser_data, &prec_stack);
     return true;
 }
