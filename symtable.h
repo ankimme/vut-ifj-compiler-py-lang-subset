@@ -1,5 +1,5 @@
 /*
- * @file symtable.c
+ * @file symtable.h
  * @brief Implementace tabulky symbolů pomocí hashovací tabulky
  * @author Andrea Chimenti (xchime00@stud.fit.vutbr.cz)
  * @author Martin Šerý (xserym01@stud.fit.vutbr.cz)
@@ -75,7 +75,7 @@ typedef enum
  {
 	tKey key; // klíč
 	tHTType type; // typ
-	// data
+	// užitečná data
 	tFunctionData *fun_data;
 	tVariableData *var_data;
 	tNodeData *node_data;
@@ -150,9 +150,6 @@ bool st_insert_entry_in_current_context (tSymtable *symtable, tKey key, void *da
  */
 tHash_Table_Item* st_insert_entry_in_current_context_random_key (tSymtable *symtable, void *data, tHTType type);
 
-// TODO
-// tNodeData* st_create_node(tSymtable *symtable, tSymbol symbol, tNodeData *lptr, tNodeData *rptr);
-
 /**
  * Vyhledá záznam v tabulce symbolů na základě klíče
  * 
@@ -206,26 +203,6 @@ void ht_item_clean ( tHash_Table_Item* item );
  * @return Ukazatel na nalezenou položku, v ostatních případech NULL
  */
 tHash_Table_Item* ht_search (tHash_Table* hash_table, tKey key);
-
-// /**
-//  * 
-//  * @param hash_table Vstupní hash tabulka
-//  * @param key Hashovací klíč
-//  * @return 
-//  */
-// void htInsert ( tHash_Table* ptrht, tKey key, tData data )
-
-// void htInit ( tHash_Table* ptrht );
-
-// tHash_Table_Item* htSearch ( tHash_Table* ptrht, tKey key );
-
-// void htInsert ( tHash_Table* ptrht, tKey key, tData data ); DELETE
-
-// tData* htRead ( tHash_Table* ptrht, tKey key );
-
-// void htDelete ( tHash_Table* ptrht, tKey key );
-
-// void htClearAll ( tHash_Table* ptrht );
 
 /**
  * Vygeneruje náhodný klíč o délce 128 znaků
