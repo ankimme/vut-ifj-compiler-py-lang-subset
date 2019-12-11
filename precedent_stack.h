@@ -29,6 +29,12 @@ typedef enum
     SYMBOL_HANDLE,      // [
 }Prec_stack_symbol;
 
+/**
+ *
+ * @enum Prec_token.
+ * @brief Typy tokenů přijímané jako indexy precedenční tabulkou.
+ *
+ */
 
 typedef enum
 {
@@ -106,21 +112,29 @@ void tPrec_stack_init(tPrec_stack* prec_s);
 int tPrec_stack_empty (const tPrec_stack* prec_s);
 
 /**
- * Vložení symbolu na vrchol zásobníku. 
+ * Vložení terminálního symbolu na vrchol zásobníku. 
  *
  * @param prec_s Ukazatel na zásobník symbolů pro precedenční analýzu.
- * @param type Určuje, zda se vkládá terminál či neterminál na vrchol zásobníku.
+ * @param type Určuje, zda že se vkládá terminál či neterminál na vrchol zásobníku.
  * @param value_type Typ symbolu načteného ze vstupní pásky (typ tokenu).
  * @param string Konkrétní symbol načtený ze vstupní pásky a vkládaný na zásobník.
  * @return Vrací hodnotu 1 v případě úspěšného vložení symbolu na zásobník, jinak vrací hodnotu 0.
  *
  */
 
-
-
 int tPrec_stack_push(tPrec_stack* prec_s, Prec_stack_symbol type, Token_type value_type, char* string);
 
+/**
+ * Vložení neterminálního symbolu na vrchol zásobníku. 
+ *
+ * @param prec_s Ukazatel na zásobník symbolů pro precedenční analýzu.
+ * @param val Terminální symbol, který bude vložen na zásobník ve formě neterminálu.
+ * @return Vrací hodnotu 1 v případě úspěšného vložení symbolu na zásobník, jinak vrací hodnotu 0.
+ *
+ */
+
 int tPrec_stack_push_nonterminal(tPrec_stack* prec_s, tSymbol val);
+
 /**
  * Získání terminálu vyskytujícího se nejvýše u vrcholu zásobníku. 
  *
@@ -150,6 +164,14 @@ int tPrec_stack_push_handle(tPrec_stack* prec_s);
  */
 
 void tPrec_stack_pop(tPrec_stack* prec_s);
+
+/**
+ * Uvolnění symbolu nacházejícího se za vrcholem zásobníku a uvolnění jím naalokované paměti.
+ *
+ * @param prec_s Ukazatel na zásobník symbolů pro precedenční analýzu.
+ * @post V případě, že se za vrcholem vyskytuje nějaký symbol, bude odstraněn ze zásobníku a dojde k provázání ukazatele vrcholu na následný symbol.
+ *
+ */
 
 void tPrec_stack_pop_after_top(tPrec_stack* prec_s);
 
