@@ -31,9 +31,12 @@ typedef struct
     int if_statement_index;
     int max_if_statement_index;
     int while_statement_index;
+    int max_while_statement_index;
     bool unget_token; // flag který vynutí načíst stejný token znova
     bool load_backup;
     bool function_definition_scope; // flag určuje zda se právě nacházíme v definici funkce
+    bool convert_relation_types;
+    bool check_relation_expression;
 } tParser_data;
 
 /**

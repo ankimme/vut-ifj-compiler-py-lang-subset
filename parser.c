@@ -20,9 +20,8 @@ int start_analysis()
     }
     start_generating();
     // nacteni prvniho tokenu
-    // get_next_token(parser_data->current_token, parser_data->scanner_stack); DELETE
     get_token_and_set_error_code(parser_data);
-    bool unknown_error = !prog(parser_data); // TODO remove unknown error handling
+    bool unknown_error = !prog(parser_data);
     int error_code = unknown_error && !parser_data->error_code ? 6 : parser_data->error_code;
     free_parser_data(parser_data);
     free(parser_data);
@@ -37,7 +36,6 @@ bool init_parser_data(tParser_data *parser_data)
     parser_data->current_token = malloc(sizeof(St_token));
     if (parser_data->current_token == NULL)
     {
-        // todo set error everywhere
         return false;
     }
     parser_data->current_token->type = UNDEFINED;
@@ -95,10 +93,9 @@ bool init_parser_data(tParser_data *parser_data)
     string_init(entry_print);
     string_append(entry_print, "print");
     tFunctionData *data_print = malloc(sizeof(tFunctionData));
-    data_print->params_count = 1; // TODO vice parametru
+    data_print->params_count = 1;
     data_print->return_type = TYPE_NONE;
     st_insert_entry_in_current_context(parser_data->symtable, entry_print, data_print, HT_TYPE_FUNCTION);
-    // TODO vlozit vsechny vestavene funkce
 
 
     // vlozeni inputs entry do tabulky symbolu
@@ -106,7 +103,6 @@ bool init_parser_data(tParser_data *parser_data)
     string_init(entry_inputs);
     string_append(entry_inputs, "inputs");
     tFunctionData *data_inputs = malloc(sizeof(tFunctionData));
-    // todo
     data_inputs->params_count = 0;
     data_inputs->return_type = TYPE_STRING;
     st_insert_entry_in_current_context(parser_data->symtable, entry_inputs, data_inputs, HT_TYPE_FUNCTION);
@@ -117,7 +113,6 @@ bool init_parser_data(tParser_data *parser_data)
     string_init(entry_inputi);
     string_append(entry_inputi, "inputi");
     tFunctionData *data_inputi = malloc(sizeof(tFunctionData));
-    // todo
     data_inputi->params_count = 0;
     data_inputi->return_type = TYPE_INT;
     st_insert_entry_in_current_context(parser_data->symtable, entry_inputi, data_inputi, HT_TYPE_FUNCTION);
@@ -128,7 +123,6 @@ bool init_parser_data(tParser_data *parser_data)
     string_init(entry_inputf);
     string_append(entry_inputf, "inputf");
     tFunctionData *data_inputf = malloc(sizeof(tFunctionData));
-    // todo
     data_inputf->params_count = 0;
     data_inputf->return_type = TYPE_FLOAT;
     st_insert_entry_in_current_context(parser_data->symtable, entry_inputf, data_inputf, HT_TYPE_FUNCTION);
@@ -139,7 +133,6 @@ bool init_parser_data(tParser_data *parser_data)
     string_init(entry_len);
     string_append(entry_len, "len");
     tFunctionData *data_len = malloc(sizeof(tFunctionData));
-    // todo
     data_len->params_count = 1;
     data_len->return_type = TYPE_INT;
     st_insert_entry_in_current_context(parser_data->symtable, entry_len, data_len, HT_TYPE_FUNCTION);
@@ -150,7 +143,6 @@ bool init_parser_data(tParser_data *parser_data)
     string_init(entry_chr);
     string_append(entry_chr, "chr");
     tFunctionData *data_chr = malloc(sizeof(tFunctionData));
-    // todo
     data_chr->params_count = 1;
     data_chr->return_type = TYPE_STRING;
     st_insert_entry_in_current_context(parser_data->symtable, entry_chr, data_chr, HT_TYPE_FUNCTION);
@@ -161,7 +153,6 @@ bool init_parser_data(tParser_data *parser_data)
     string_init(entry_ord);
     string_append(entry_ord, "ord");
     tFunctionData *data_ord = malloc(sizeof(tFunctionData));
-    // todo
     data_ord->params_count = 2;
     data_ord->return_type = TYPE_INT;
     st_insert_entry_in_current_context(parser_data->symtable, entry_ord, data_ord, HT_TYPE_FUNCTION);
@@ -177,6 +168,7 @@ bool init_parser_data(tParser_data *parser_data)
     parser_data->if_statement_index = 0;
     parser_data->max_if_statement_index = 0;
     parser_data->while_statement_index = 0;
+    parser_data->max_while_statement_index = 0;
 
     // inicializace error kodu
     parser_data->error_code = 0;
@@ -189,6 +181,12 @@ bool init_parser_data(tParser_data *parser_data)
 
     // inicializace flagu function_definition_scope
     parser_data->function_definition_scope = false;
+
+    // inicializace flagu convert_relation_types
+    parser_data->convert_relation_types = false;
+
+    // inicializace flagu convert_relation_types
+    parser_data->check_relation_expression = false;
 
     return true;
 }
@@ -228,7 +226,6 @@ void free_parser_data(tParser_data *parser_data)
 
 bool get_token_and_set_error_code(tParser_data *parser_data)
 {
-    //TODO A
     if (parser_data->load_backup && parser_data->unget_token)
     {
         set_error_code(parser_data, INTERNAL_ERROR);
@@ -405,7 +402,6 @@ bool prog(tParser_data *parser_data)
         else if (strcmp(parser_data->current_token->attribute->str, "if") == 0 || strcmp(parser_data->current_token->attribute->str, "while") == 0 || strcmp(parser_data->current_token->attribute->str, "pass") == 0 || strcmp(parser_data->current_token->attribute->str, "None") == 0)
         {
             // musi nasledovat neterminal SEQUENCE
-            // get_token_and_set_error_code(parser_data); DELETE
             if (!sequence(parser_data))
             {
                 return false;
@@ -457,10 +453,9 @@ bool prog(tParser_data *parser_data)
         return true;
     }
     // token je pravdepodobne expression -> pravidlo 1
-    else // TODO expr
+    else
     {
         // musi nasledovat neterminal SEQUENCE
-        // get_token_and_set_error_code(parser_data); DELETE
         if (!sequence(parser_data))
         {
             return false;
@@ -473,12 +468,6 @@ bool prog(tParser_data *parser_data)
             return false;
         }
     }
-    // else DELETE
-    // {
-    //     set_error_code(parser_data, 2);
-    //     return false;
-    // }
-    
     return true;
 }
 
@@ -568,7 +557,6 @@ bool statements(tParser_data *parser_data)
         if (strcmp(parser_data->current_token->attribute->str, "if") == 0 || strcmp(parser_data->current_token->attribute->str, "while") == 0 || strcmp(parser_data->current_token->attribute->str, "pass") == 0 || strcmp(parser_data->current_token->attribute->str, "None") == 0)
         {
             // musi nasledovat neterminal SEQUENCE
-            // get_token_and_set_error_code(parser_data); DELETE
             if (!sequence(parser_data))
             {
                 return false;
@@ -585,7 +573,6 @@ bool statements(tParser_data *parser_data)
         else if (strcmp(parser_data->current_token->attribute->str, "return") == 0 && parser_data->function_definition_scope)
         {
             // musi nasledovat neterminal FUNC_RETURN
-            //get_token_and_set_error_code(parser_data); DELETE
             if (!func_return(parser_data))
             {
                 return false;
@@ -608,7 +595,6 @@ bool statements(tParser_data *parser_data)
     else if (parser_data->current_token->type == TOKEN_IDENTIFIER)
     {
         // musi nasledovat neterminal SEQUENCE
-        // get_token_and_set_error_code(parser_data); DELETE
         if (!sequence(parser_data))
         {
             return false;
@@ -627,7 +613,6 @@ bool statements(tParser_data *parser_data)
     else
     {
         // musi nasledovat neterminal SEQUENCE
-        // get_token_and_set_error_code(parser_data); DELETE
         if (!sequence(parser_data))
         {
             return false;
@@ -640,12 +625,6 @@ bool statements(tParser_data *parser_data)
             return false;
         }
     }
-    // else DELETE
-    // {
-    //     set_error_code(parser_data, 2);
-    //     return false;
-    // }
-
     return true;
 }
 
@@ -666,6 +645,7 @@ bool sequence(tParser_data *parser_data)
             parser_data->max_if_statement_index++;
             parser_data->if_statement_index = parser_data->max_if_statement_index;
 
+            parser_data->check_relation_expression = true;
             // musi nasledovat expression
             get_token_and_set_error_code(parser_data);
             if (!process_expression(parser_data))
@@ -796,6 +776,16 @@ bool sequence(tParser_data *parser_data)
         // token je "while" -> pravidlo 11
         else if (strcmp(parser_data->current_token->attribute->str, "while") == 0)
         {
+            parser_data->max_while_statement_index++;
+            parser_data->while_statement_index = parser_data->max_while_statement_index;
+
+            // generate "$loop_startINDEX" label
+            string_clear(parser_data->label);
+            string_append(parser_data->label, "$loop_start");
+            string_append_int(parser_data->label, parser_data->while_statement_index);
+            generate_label(parser_data->label->str);
+
+            parser_data->check_relation_expression = true;
             // musi nasledovat expression
             get_token_and_set_error_code(parser_data);
             if (!process_expression(parser_data))
@@ -828,6 +818,14 @@ bool sequence(tParser_data *parser_data)
                 return false;
             }
 
+            generate_false_on_stack();
+            // jump "$loop_endINDEX"
+            string_clear(parser_data->label);
+            string_append(parser_data->label, "$loop_end");
+            string_append_int(parser_data->label, parser_data->while_statement_index);
+            generate_jump_if_equals_stack(parser_data->label->str);
+
+
             // musi nasledovat neterminal STATEMENTS
             get_token_and_set_error_code(parser_data);
             if (!statements(parser_data))
@@ -840,6 +838,21 @@ bool sequence(tParser_data *parser_data)
             {
                 return false;
             }
+
+            // jump "$loop_startINDEX"
+            string_clear(parser_data->label);
+            string_append(parser_data->label, "$loop_start");
+            string_append_int(parser_data->label, parser_data->while_statement_index);
+            generate_jump(parser_data->label->str);
+
+
+            // label "$loop_endINDEX"
+            string_clear(parser_data->label);
+            string_append(parser_data->label, "$loop_end");
+            string_append_int(parser_data->label, parser_data->while_statement_index);
+            generate_label(parser_data->label->str);
+
+            parser_data->while_statement_index--;
         }
         // token je "pass" -> pravidlo 13
         else if (strcmp(parser_data->current_token->attribute->str, "pass") == 0)
@@ -862,7 +875,6 @@ bool sequence(tParser_data *parser_data)
         else if (strcmp(parser_data->current_token->attribute->str, "None") == 0)
         {
             // musi nasledovat expression
-            // get_token_and_set_error_code(parser_data); DELETE
             if (!process_expression(parser_data))
             {
                 return false;
@@ -966,7 +978,6 @@ bool sequence(tParser_data *parser_data)
             parser_data->table_l_value = NULL;
 
             // musi nasledovat expression
-            // get_token_and_set_error_code(parser_data); DELETE
             if (!process_expression(parser_data))
             {
                 return false;
@@ -992,7 +1003,6 @@ bool sequence(tParser_data *parser_data)
     else
     {
         // musi nasledovat expression
-        // get_token_and_set_error_code(parser_data); DELETE
         if (!process_expression(parser_data))
         {
             return false;
@@ -1013,49 +1023,6 @@ bool sequence(tParser_data *parser_data)
         }
         parser_data->table_l_value = NULL;
     }
-    /*
-    // token je identifikator -> pravidlo 12
-    else if (parser_data->current_token->type == TOKEN_IDENTIFIER)
-    {
-        // musi nasledovat neterminal INSTRUCT
-        get_token_and_set_error_code(parser_data);
-        if (!instruct(parser_data))
-        {
-            return false;
-        }
-
-        // musi nasledovat EOL
-        if (!get_compare_check_double(parser_data, TOKEN_EOL, TOKEN_EOF))
-        {
-            return false;
-        }
-    }
-    // TODO expr
-    // token je pravdepodobne expression -> pravidlo 9
-    else
-    {
-        // musi nasledovat expression
-        // get_token_and_set_error_code(parser_data); DELETE
-        if (!process_expression(parser_data))
-        {
-            return false;
-        }
-
-        // musi nasledovat "EOL" nebo "EOF"
-        get_token_and_set_error_code(parser_data);
-        // if (!get_compare_check(parser_data, TOKEN_EOL)) DELETE
-        if (parser_data->current_token->type != TOKEN_EOL && parser_data->current_token->type != TOKEN_EOF)
-        {
-            return false;
-        }
-    }
-    */
-    // else // DELETE ???
-    // {
-    //     set_error_code(parser_data, 2);
-    //     return false;
-    // }
-
     return true;
 }
 
@@ -1074,7 +1041,6 @@ bool sequence_n(tParser_data *parser_data)
         if (strcmp(parser_data->current_token->attribute->str, "if") == 0 || strcmp(parser_data->current_token->attribute->str, "while") == 0 || strcmp(parser_data->current_token->attribute->str, "pass") == 0 || strcmp(parser_data->current_token->attribute->str, "None") == 0 || (strcmp(parser_data->current_token->attribute->str, "return") == 0 && parser_data->function_definition_scope))
         {
             // musi nasledovat neterminal STATEMENTS
-            // get_token_and_set_error_code(parser_data); DELETE
             if (!statements(parser_data))
             {
                 return false;
@@ -1090,7 +1056,6 @@ bool sequence_n(tParser_data *parser_data)
     else if (parser_data->current_token->type == TOKEN_IDENTIFIER)
     {
         // musi nasledovat neterminal STATEMENTS
-        // get_token_and_set_error_code(parser_data); DELETE
         if (!statements(parser_data))
         {
             return false;
@@ -1111,30 +1076,17 @@ bool sequence_n(tParser_data *parser_data)
         {
             return false;
         }
-        // parser_data->unget_token = true;
-        // return true;
     }
-    // else if (parser_data->current_token->type == TOKEN_EOF) // TODO test feature
-    // {
-    //     return true;
-    // }
-    // TODO expr
     // token je pravdepodobne expression -> pravidlo 16
     else
     {
         // musi nasledovat neterminal STATEMENTS
-        // get_token_and_set_error_code(parser_data); DELETE
         if (!statements(parser_data))
         {
             return false;
         }
     }
-    // else DELETE
-    // {
-    //     set_error_code(parser_data, 2);
-    //     return false;
-    // }
-
+    
     return true;
 }
 
@@ -1185,7 +1137,6 @@ bool return_value(tParser_data *parser_data)
     // token je EOL -> pravidlo 36
     if (parser_data->current_token->type == TOKEN_EOL)
     {
-        // parser_data->unget_token = true; DELETE
         return true;
     }
     // EOF handling
@@ -1198,7 +1149,6 @@ bool return_value(tParser_data *parser_data)
     else
     {
         // musi nasledovat expression
-        // get_token_and_set_error_code(parser_data); DELETE
         if (!process_expression(parser_data))
         {
             return false;
@@ -1219,12 +1169,6 @@ bool return_value(tParser_data *parser_data)
             return false;
         }
     }
-    // else TODO / overit funkcnost, jestli expressions opravdu prekouse jakoukoliv blbost / DELETE
-    // {
-    //     set_error_code(parser_data, 2);
-    //     return false;
-    // }
-
     return true;
 }
 
@@ -1293,13 +1237,10 @@ bool instruct_continue(tParser_data *parser_data)
         return false;
     }
 
-    // TODO zde se bude rozhodovat zda vstoupit do analyzy vyrazu nebo do vetve pro identifikator, tohle rozhodnuti probehne na zaklade nahlednuti do tabulky symbolu
-
-    // TODO symtable
     // token je identifikator
     if (parser_data->current_token->type == TOKEN_IDENTIFIER)
     {
-        if (!copy_token(parser_data, parser_data->current_token, parser_data->backup_token)) // todo
+        if (!copy_token(parser_data, parser_data->current_token, parser_data->backup_token))
         {
             return false;
         }
@@ -1356,7 +1297,7 @@ bool instruct_continue(tParser_data *parser_data)
 
             parser_data->table_l_value->var_data->type = parser_data->table_r_value->fun_data->return_type;
 
-            parser_data->table_r_value = NULL; // TODO overit jestli to zde opravdu ma byt -> musi se zajistit aby se table_r_value po volani funkce vratil na null, otazka je jestli to udelat zde
+            parser_data->table_r_value = NULL;
         }
         // token je expression -> pravidlo 21
         else
@@ -1374,7 +1315,6 @@ bool instruct_continue(tParser_data *parser_data)
             }
 
             // musi nasledovat expression
-            // get_token_and_set_error_code(parser_data); DELETE
             if (!process_expression(parser_data))
             {
                 return false;
@@ -1392,7 +1332,6 @@ bool instruct_continue(tParser_data *parser_data)
         }
 
         // musi nasledovat expression
-        // get_token_and_set_error_code(parser_data); DELETE
         if (!process_expression(parser_data))
         {
             return false;
@@ -1401,48 +1340,6 @@ bool instruct_continue(tParser_data *parser_data)
         generate_pops_variable(parser_data->table_l_value->key->str);
         parser_data->table_l_value = NULL;
     }
-    
-    /*
-    // token je identifikator -> pravidlo 22
-    if (parser_data->current_token->type == TOKEN_IDENTIFIER)
-    {
-        // musi nasledovat "("
-        if (!get_compare_check(parser_data, TOKEN_LEFT_BRACKET))
-        {
-            return false;
-        }
-
-        // musi nasledovat neterminal TERM
-        get_token_and_set_error_code(parser_data);
-        if (!term(parser_data))
-        {
-            return false;
-        }
-
-        // musi nasledovat ")"
-        if (!get_compare_check(parser_data, TOKEN_RIGHT_BRACKET))
-        {
-            return false;
-        }
-    }
-    // TODO expr
-    // token je pravdepodobne expression -> pravidlo 21
-    else
-    {
-        // musi nasledovat neterminal EXPRESSION
-        // get_token_and_set_error_code(parser_data);
-        if (!process_expression(parser_data))
-        {
-            return false;
-        }
-    }
-    */
-    // else // DELETE ???
-    // {
-    //     set_error_code(parser_data, 2);
-    //     return false;
-    // }
-    
     return true;
 }
 
@@ -1460,7 +1357,6 @@ bool term(tParser_data *parser_data)
         // token je "None" -> pravidlo 25
         if (strcmp(parser_data->current_token->attribute->str, "None") == 0)
         {
-            // pocitadlo++
             parser_data->fun_call_param_count++;
             // defvar, move
             generate_pass_arg_to_func("None", TOKEN_KEYWORD, parser_data->fun_call_param_count);
@@ -1481,7 +1377,6 @@ bool term(tParser_data *parser_data)
     // token je identifikator -> pravidlo 23
     else if (parser_data->current_token->type == TOKEN_IDENTIFIER)
     {
-        // pocitadlo++
         parser_data->fun_call_param_count++;
 
         tHash_Table_Item *item = st_search_entry(parser_data->symtable, parser_data->current_token->attribute);
@@ -1528,9 +1423,7 @@ bool term(tParser_data *parser_data)
             return false;
         }
 
-        // pocitadlo++
         parser_data->fun_call_param_count++;
-        // defvar, move
 
         if (parser_data->current_token->type == TOKEN_STRING_LITERAL)
         {
@@ -1602,7 +1495,6 @@ bool term_n_value(tParser_data *parser_data)
         // token je "None" -> pravidlo 31
         if (strcmp(parser_data->current_token->attribute->str, "None") == 0)
         {
-            // pocitadlo++
             parser_data->fun_call_param_count++;
             // defvar, move
             generate_pass_arg_to_func("None", TOKEN_KEYWORD, parser_data->fun_call_param_count);
@@ -1623,7 +1515,6 @@ bool term_n_value(tParser_data *parser_data)
     // token je identifikator -> pravidlo 29
     else if (parser_data->current_token->type == TOKEN_IDENTIFIER)
     {
-        // pocitadlo++
         parser_data->fun_call_param_count++;
 
         tHash_Table_Item *item = st_search_entry(parser_data->symtable, parser_data->current_token->attribute);
@@ -1664,7 +1555,6 @@ bool term_n_value(tParser_data *parser_data)
             return false;
         }
 
-        // pocitadlo++
         parser_data->fun_call_param_count++;
 
         if (parser_data->current_token->type == TOKEN_STRING_LITERAL)
