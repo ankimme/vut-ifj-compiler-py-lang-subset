@@ -19,7 +19,6 @@ void generate_build_in_functions()
 	printf("%s", LEN);
 	printf("%s", PRINT);
 	printf("%s", ORD);
-//	printf("%s", SUBSTRING);
 }
 
 void generate_header() 
@@ -50,23 +49,6 @@ void start_generating()
 	generate_header();
 	generate_build_in_functions();
 	generate_main_header();
-}
-
-void generate_function_start(char* function_name)
-{
-	printf("%s", "LABEL _");
-	printf("%s", function_name);
-	printf("%s", "\n");
-	printf("%s", "PUSHFRAME\n");
-}
-
-void generate_function_end(char* function_name)
-{
-	printf("%s", "LABEL _");
-	printf("%s", function_name);
-	printf("%s", "return");
-	printf("%s", "\n");
-	printf("%s", "RETURN\n");
 }
 
 void generate_call_for_function(char* function_name)
@@ -107,7 +89,6 @@ void generate_pass_arg_to_func(char* variable, Token_type type, int index)
 	printf("%d", index);
 	printf("%s", "\n");
 
-
 	printf("%s", "MOVE TF@%");
 	printf("%d", index);
 	printf("%s", " ");
@@ -136,30 +117,16 @@ void generate_pass_arg_to_func(char* variable, Token_type type, int index)
 			printf("%s", variable);
 			break;
 		default:
-			// raise error
 			break;
 	}
 	printf("%s", "\n");
 }
-
-/*
-void generate_func_variables(char* name, char*value)
-{
-	generate_variable_declaration(name);
-	printf("%s", "MOVE LF@");
-	printf("%s", name);
-	printf("%s", "LF@");
-	printf("%s", value);
-	printf("%s", "\n");
-}
-*/
 
 void generate_false_on_stack()
 {
 	printf("%s", "PUSHS bool@false\n");
 }
 
-/*
 void conv_int_to_float(char* value_in_register)
 {
 	printf("%s", "INT2FLOAT TF@");
@@ -169,23 +136,9 @@ void conv_int_to_float(char* value_in_register)
 	printf("%s", "\n");
 }
 
-void conv_float_to_int(char* value_in_register)
-{
-	printf("%s", "FLOAT2INT TF@");
-	printf("%s", value_in_register);
-	printf("%s", " TF@");
-	printf("%s", value_in_register);
-	printf("%s", "\n");
-}*/
-
 void conv_int_to_float_stack()
 {
 	printf("%s", "INT2FLOATS\n");
-}
-
-void conv_float_to_int_stack()
-{
-	printf("%s", "FLOAT2INTS\n");
 }
 
 void generate_concat()
@@ -224,15 +177,9 @@ void generate_pushs(char* variable, Token_type type)
 			printf("%s", variable);
 			break;
 		default:
-			// raise error
 			break;
 	}
 	printf("%s", "\n");
-}
-
-void generate_pops()
-{
-	printf("%s", "POPS  GF@return\n");
 }
 
 void generate_adds()
@@ -253,9 +200,15 @@ void generate_muls()
 void generate_divs()
 {
 	printf("%s", "POPS GF@$variable1\n");
-	printf("%s", "JUMPIFNEQ _not_zero GF@$variable1 float@0x0p+0\n");
+	char arr[10] = "";
+	st_generate_random_label_name(&(arr[0]));
+	printf("%s", "JUMPIFNEQ _");
+	printf("%s", arr);
+	printf("%s", " GF@$variable1 float@0x0p+0\n");
 	printf("%s", "EXIT int@9\n");
-	printf("%s", "LABEL _not_zero\n");
+	printf("%s", "LABEL _");
+	printf("%s", arr);
+	printf("%s", "\n");
 	printf("%s", "PUSHS GF@$variable1\n");
 	printf("%s", "DIVS\n");
 }
@@ -263,16 +216,150 @@ void generate_divs()
 void generate_idivs()
 {
 	printf("%s", "POPS GF@$variable1\n");
-	printf("%s", "JUMPIFNEQ _not_zero GF@$variable1 int@0\n");
+	char arr[10] = "";
+	st_generate_random_label_name(&(arr[0]));
+	printf("%s", "JUMPIFNEQ _");
+	printf("%s", arr);
+	printf("%s", " GF@$variable1 int@0\n");
 	printf("%s", "EXIT int@9\n");
-	printf("%s", "LABEL _not_zero\n");
+	printf("%s", "LABEL _");
+	printf("%s", arr);
+	printf("%s", "\n");
 	printf("%s", "PUSHS GF@$variable1\n");
 	printf("%s", "IDIVS\n");
 }
 
 void generate_EQS()
 {
+	printf("%s", "POPS GF@$variable1\n");
+	printf("%s", "POPS GF@$variable2\n");
+
+	printf("%s", "DEFVAR LF@type_1\n");
+	printf("%s", "DEFVAR LF@type_2\n");
+
+	printf("%s","TYPE LF@type_1 GF@$variable1\n");
+	printf("%s","TYPE LF@type_2 GF@$variable2\n");
+
+	printf("%s","PUSHS LF@type_1\n");
+	printf("%s","PUSHS LF@type_2\n");
+
 	printf("%s", "EQS\n");
+}
+
+void generate_compare()
+{
+
+	
+	printf("%s", "POPS GF@$variable1\n");
+
+	printf("%s", "DEFVAR LF@exp_type_1\n");
+	printf("%s", "DEFVAR LF@exp_type_2\n");
+	printf("%s", "DEFVAR LF@exp_type_3\n");
+	printf("%s", "DEFVAR LF@exp_type_4\n");
+	printf("%s", "DEFVAR LF@type\n");
+	
+
+	printf("%s", "TYPE LF@type GF@$variable1\n");
+	printf("%s", "MOVE LF@exp_type_1 int@0\n");
+	printf("%s", "MOVE LF@exp_type_2 string@\n");
+	printf("%s", "MOVE LF@exp_type_3 nil@nil\n");
+	printf("%s", "MOVE LF@exp_type_4 float@0x0p+0\n");
+
+	char arr[10] = "";
+	st_generate_random_label_name(&(arr[0]));
+
+	printf("%s", "JUMPIFNEQ _");
+	printf("%s", arr);
+	printf("%s", " LF@type string@int\n");
+
+	printf("%s","CLEARS\n");
+	printf("%s", "PUSHS GF@$variable1\n");
+	printf("%s", "PUSHS LF@exp_type_1\n");
+
+	printf("%s", "EQS\n");
+	printf("%s", "NOTS\n");
+
+	printf("%s", "LABEL _");
+	printf("%s", arr);
+	printf("%s", "\n");
+
+	st_generate_random_label_name(&(arr[0]));
+
+	printf("%s", "JUMPIFNEQ _");
+	printf("%s", arr);
+	printf("%s", " LF@type string@string\n");
+
+	printf("%s","CLEARS\n");
+	printf("%s", "PUSHS GF@$variable1\n");
+	printf("%s", "PUSHS LF@exp_type_2\n");
+
+	printf("%s", "EQS\n");
+	printf("%s", "NOTS\n");
+
+	printf("%s", "LABEL _");
+	printf("%s", arr);
+	printf("%s", "\n");
+
+	st_generate_random_label_name(&(arr[0]));
+
+	printf("%s", "JUMPIFNEQ _");
+	printf("%s", arr);
+	printf("%s", " LF@type string@nil\n");
+
+	printf("%s","CLEARS\n");
+	printf("%s", "PUSHS GF@$variable1\n");
+	printf("%s", "PUSHS LF@exp_type_3\n");
+	printf("%s", "EQS\n");
+	printf("%s", "NOTS\n");
+
+	printf("%s", "LABEL _");
+	printf("%s", arr);
+	printf("%s", "\n");
+
+	st_generate_random_label_name(&(arr[0]));
+
+	printf("%s", "JUMPIFNEQ _");
+	printf("%s", arr);
+	printf("%s", " LF@type string@float\n");
+
+	printf("%s","CLEARS\n");
+	printf("%s", "PUSHS GF@$variable1\n");
+	printf("%s", "PUSHS LF@exp_type_4\n");
+	printf("%s", "EQS\n");
+	printf("%s", "NOTS\n");
+
+	printf("%s", "LABEL _");
+	printf("%s", arr);
+	printf("%s", "\n");
+}
+
+void generate_NEQS()
+{
+	printf("%s", "POPS GF@$variable1\n");
+	printf("%s", "POPS GF@$variable2\n");
+
+	printf("%s", "DEFVAR LF@type_1\n");
+	printf("%s", "DEFVAR LF@type_2\n");
+
+	printf("%s","TYPE LF@type_1 GF@$variable1\n");
+	printf("%s","TYPE LF@type_2 GF@$variable2\n");
+
+	printf("%s","PUSHS LF@type_1\n");
+	printf("%s","PUSHS LF@type_2\n");
+
+	printf("%s", "EQS\n");
+	printf("%s", "NOTS\n");
+}
+
+void generate_same_type_EQS()
+{
+	printf("%s", "EQS\n");
+}
+
+void generate_same_type_NEQS()
+{
+	printf("%s", "EQS\n");
+	printf("%s", "NOTS\n");
 }
 
 void generate_GTS()
@@ -284,32 +371,6 @@ void generate_LTS()
 {
 	printf("%s", "LTS\n");
 }
-
-/*void generate_LTEQ()
-{
-	printf("%s","POPS GF@$variable1\n");
-	printf("%s","POPS GF@$variable2\n");
-	printf("%s","PUSHS GF@$variable2\n");
-	printf("%s","PUSHS GF@$variable1\n");
-	printf("LTS\n");
-	printf("%s","PUSHS GF@$variable1\n");
-	printf("%s","PUSHS GF@$variable2\n");
-	printf("EQS\n");
-	printf("ORS\n");
-}
-
-void generate_GTEQ()
-{
-	printf("%s","POPS GF@$variable1\n");
-	printf("%s","POPS GF@$variable2\n");
-	printf("%s","PUSHS GF@$variable2\n");
-	printf("%s","PUSHS GF@$variable1\n");
-	printf("GTS\n");
-	printf("%s","PUSHS GF@$variable2\n");
-	printf("%s","PUSHS GF@$variable1\n");
-	printf("EQS\n");
-	printf("ORS\n");
-}*/
 
 void generate_LTEQ()
 {
@@ -330,14 +391,6 @@ void generate_label(char* label)
 	printf("%s","\n");
 }
 
-void generate_jump_if_equals(char* label)
-{
-	printf("%s", "JUMPIFEQ _");
-	printf("%s", label);
-	printf("%s", "GF@$variable1 GF@$variable2");
-	printf("%s", "\n");
-}
-
 void generate_jump(char* label)
 {
 	printf("%s", "JUMP _");
@@ -352,17 +405,15 @@ void generate_jump_if_equals_stack(char* label)
 	printf("%s", "\n");
 }
 
-
-
-
-
-/*
-void while_statement(char* function)
+void st_generate_random_label_name(char *label)
 {
-	printf("%s", "JUMPIFEQ _");
-	printf("%s", function);
-	printf("%s", "GF@$result GF@$comp_variable");
-	printf("%s", "\n");
-}
+	int label_len = 10;
+    const char symbols[] = "abcdefghijklmnopqrstuvwxyz0123456789$";
+    int symbol_count = strlen(symbols);
 
-*/
+    for (int i = 0; i < label_len - 1; i++)
+    {
+        label[i] = symbols[rand() % symbol_count];
+    }
+	label[label_len - 1] = '\0';
+}

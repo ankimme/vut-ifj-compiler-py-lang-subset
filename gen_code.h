@@ -14,6 +14,10 @@
 #include "parser.h"
 #include <stdio.h>
 
+/**
+ * @def HEADER
+ * Vytiskne na stdout hlavičku IFJcode19
+ */
 #define HEADER \
 	".IFJcode19\n"\
 	"DEFVAR GF@return\n"\
@@ -24,7 +28,10 @@
 	"DEFVAR GF@$variable2\n"\
 	"JUMP _main\n" \
 
-
+/**
+ * @def INPUTS
+ * Vytiskne na stdout vestavěnou funkci INPUTS 
+ */
 #define INPUTS \
 	"LABEL _inputs\n" \
 	"PUSHFRAME\n"\
@@ -33,6 +40,10 @@
 	"POPFRAME\n"\
     "RETURN\n" \
 
+/**
+ * @def INPUTI
+ * Vytiskne na stdout vestavěnou funkci INPUTI
+ */
 #define INPUTI \
 	"LABEL _inputi\n" \
 	"PUSHFRAME\n"\
@@ -41,6 +52,10 @@
 	"POPFRAME\n"\
 	"RETURN\n" \
 
+/**
+ * @def INPUTF	 
+ * Vytiskne na stdout vestavěnou funkci INPUTF
+ */
 #define INPUTF \
 	"LABEL _inputf\n" \
 	"PUSHFRAME\n"\
@@ -49,6 +64,10 @@
 	"POPFRAME\n"\
 	"RETURN\n" \
 
+/**
+ * @def CHR	 
+ * Vytiskne na stdout vestavěnou funkci CHR
+ */
 #define CHR \
 	"LABEL _chr\n" \
 	"PUSHFRAME\n" \
@@ -80,6 +99,10 @@
 	"POPFRAME\n"\
 	"RETURN\n"\
 
+/**
+ * @def LEN	 
+ * Vytiskne na stdout vestavěnou funkci LEN
+ */
 #define LEN \
 	"LABEL _len\n" \
 	"PUSHFRAME\n" \
@@ -97,6 +120,10 @@
 	"POPFRAME\n" \
 	"RETURN\n"\
 
+/**
+ * @def ORD	 
+ * Vytiskne na stdout vestavěnou funkci ORD
+ */
 #define ORD \
 	"LABEL _ord\n"\
 	"PUSHFRAME\n"\
@@ -136,9 +163,10 @@
 	"POPFRAME\n"\
 	"RETURN\n"\
 
-#define SUBSTRING \
-	"LABEL _substring\n"\
-
+/**
+ * @def PRINT
+ * Vytiskne na stdout vestavěnou funkci PRINT
+ */
 #define PRINT \
 	"LABEL _print\n" \
 	"PUSHFRAME\n" \
@@ -149,88 +177,189 @@
 	"POPFRAME\n" \
 	"RETURN\n" \
 
+/**
+ * Vytiskne na stdout všechny věstavené funkce
+ */
 void generate_build_in_functions();
 
+/**
+ * Vytiskne na stdout hlavičku IFJcode19
+ */
 void generate_header();
 
-void start_generating();
-
+/**
+ * Vytiskne na stdout začátek funkce main
+ */
 void generate_main_header();
 
+/**
+ * Vytiskne na stdout konec funkce main
+ */
 void generate_main_footer();
 
-void generate_store_return(char * variable);
+/**
+ * Vytiskne na stdout vytvoření dočasného rámce
+ */
+void generate_function_createframe(); 
 
-void generate_function_start(char* function_name);
+/**
+ * Provede základní inicalizaci generátor
+ * Zavolá funkce pro výtisk věstavěných funkcí, hlavičky IFJcode19 a začátku funkce main
+ */
+void start_generating();
 
-void generate_function_end(char* function_name);
-
+/**
+ * Vytiskne na stdout volání funkce 
+ * @param function_name název funkce
+ */
 void generate_call_for_function(char* function_name);
 
-void generate_return_for_function(char* value);
+/**
+ * Vytiskne na stdout získání návratové hodnoty z funkce
+ * @param variable název proměnné, do které se ukládá hodnota vrácená z funkce
+ */
+void generate_store_return(char * variable);
 
-void generate_function_pass_arg_stack(int tempName);
-
+/**
+ * Vytiskne na stdout deklaraci globální proměnné 
+ * @param variable název deklarované proměnné
+ */
 void generate_variable_declaration(char* variable);
 
-void generate_function_createframe();
-
+/**
+ * Vytiskne na stdout vyjmutí hodnoty ze zásobníku
+ * @param variable název proměnné do které se hodnota uloží
+ */
 void generate_pops_variable(char* variable);
 
+/**
+ * Vytiskne na stdout předávání parametrů funkci
+ * @param variable argument, který se předává funkci
+ * @param type datový typ argumentu předávaný tokenem
+ * @param index specifické označení pro dočasný rámec
+ */
 void generate_pass_arg_to_func(char* variable, Token_type type, int index);
 
-void generate_func_variables(char* name, char* value);
-
-void generate_label(char* label);
-
+/**
+ * Vytiskne na stdout vložení bool s hodnotou false na zásobník
+ */
 void generate_false_on_stack();
 
+/**
+ * Vytiskne na stdout konvertování int na float
+ * @param value_in_register specifické označení pro dočasný rámec
+ */
 void conv_int_to_float(char* value_in_register);
 
-void conv_float_to_int(char* value_in_register);
-
+/**
+ * Vytiskne na stdout zásobníkovou verzi konvertování int na float
+ */
 void conv_int_to_float_stack();
 
-void conv_float_to_int_stack();
-
-void conv_int_to_float_stack_2();
-
-void conv_float_to_int_stack_2();
-
+/**
+ * Vytiskne na stdout konkatenaci dvou řetězců
+ */
 void generate_concat();
 
-void generate_print();
-
+/**
+ * Vytiskne na stdout vložení hodnoty na zásobník
+ * @param variable název proměnné, jejíž hodnota se vloží na zásobník
+ * @param type datový typ argumentu předávaný tokenem
+ */
 void generate_pushs(char* variable, Token_type type);
 
-void generate_pops();
-
+/**
+ * Vytiskne na stdout sčítání dvou hodnot ze zásobníku
+ */
 void generate_adds();
 
+/**
+ * Vytiskne na stdout odečítání dvou hodnot ze zásobníku
+ */
 void generate_subs();
 
+/**
+ * Vytiskne na stdout násobení dvou hodnot ze zásobníku
+ */
 void generate_muls();
 
+/**
+ * Vytiskne na stdout dělení dvou hodnot ze zásobníku
+ */
 void generate_divs();
 
+/**
+ * Vytiskne na stdout celočíselné dělení dvou hodnot ze zásobníku
+ */
 void generate_idivs();
 
+/**
+ * Vytiskne na stdout porovnání pokud jsou dvě hodnoty různého datového typu shodné
+ */
 void generate_EQS();
 
+/**
+ * Vytiskne na stdout porovnání datového typu hodnoty ze zásobníku
+ */
+void generate_compare();
+
+/**
+ * Vytiskne na stdout porovnání pokud jsou dvě hodnoty různého datového typu odlišné
+ */
+void generate_NEQS();
+
+/**
+ * Vytiskne na stdout porovnání pokud jsou dvě hodnoty stejného datového typu shodné
+ */
+void generate_same_type_EQS();
+
+/**
+ * Vytiskne na stdout porovnání pokud jsou dvě hodnoty stejného datového typu odlišné
+ */
+void generate_same_type_NEQS();
+
+/**
+ * Vytiskne na stdout relační operátor větší než
+ */
 void generate_GTS();
 
+/**
+ * Vytiskne na stdout relační operátor menší než
+ */
 void generate_LTS();
 
+/**
+ * Vytiskne na stdout relační operátor menší nebo rovno
+ */
 void generate_LTEQ();
 
+/**
+ * Vytiskne na stdout relační operátor větší nebo rovno
+ */
 void generate_GTEQ();
 
-void generate_jump_if_equals(char* label);
+/**
+ * Vytiskne na stdout návěští
+ * @param label název návěští
+ */
+void generate_label(char* label);
 
+/**
+ * Vytiskne na stdout skok na návěští
+ * @param label název návěští
+ */
 void generate_jump(char* label);
 
+/**
+ * Vytiskne na stdout podmíněný skok na návěští
+ * @param label název návěští
+ */
 void generate_jump_if_equals_stack(char* label);
 
-void while_statement(char* function);
+/**
+ * Vytiskne na stdout generace unikátního návěští
+ * @param label pole znaků, které musí být délky 10
+ */
+void st_generate_random_label_name(char *label);
 
 #endif
