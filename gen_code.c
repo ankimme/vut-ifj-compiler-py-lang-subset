@@ -45,23 +45,6 @@ void generate_function_createframe()
 	printf("%s", "CREATEFRAME\n");
 }
 
-void generate_function_pass_arg_stack(int tempName)
-{
-	printf("%s", "DEFVAR TF@");
-	printf("%d", tempName);
-	printf("%s", "\n");
-
-	printf("%s", "POPS TF@");
-	printf("%d", tempName);
-	printf("%s", "\n");
-
-	/*printf("%s", "MOVE TF@");
-	printf("%d", tempName);
-	printf("%s", " ");
-	printf("%s", param);
-	printf("%s", "\n");*/
-}
-
 void start_generating()
 {
 	generate_header();
@@ -114,10 +97,6 @@ void generate_pops_variable(char* variable)
 	printf("%s", "POPS GF@");
 	printf("%s", variable);
 	printf("%s", "\n");
-
-	// printf("%s", "WRITE GF@"); // todo delete
-	// printf("%s", variable); // todo delete
-	// printf("%s", "\n"); // todo delete
 }
 
 void generate_pass_arg_to_func(char* variable, Token_type type, int index)
@@ -163,6 +142,7 @@ void generate_pass_arg_to_func(char* variable, Token_type type, int index)
 	printf("%s", "\n");
 }
 
+/*
 void generate_func_variables(char* name, char*value)
 {
 	generate_variable_declaration(name);
@@ -172,14 +152,14 @@ void generate_func_variables(char* name, char*value)
 	printf("%s", value);
 	printf("%s", "\n");
 }
+*/
 
-void generate_label(char* label)
+void generate_false_on_stack()
 {
-	printf("%s", "LABEL _");
-	printf("%s", label);
-	printf("%s","\n");
+	printf("%s", "PUSHS bool@false\n");
 }
 
+/*
 void conv_int_to_float(char* value_in_register)
 {
 	printf("%s", "INT2FLOAT TF@");
@@ -196,7 +176,7 @@ void conv_float_to_int(char* value_in_register)
 	printf("%s", " TF@");
 	printf("%s", value_in_register);
 	printf("%s", "\n");
-}
+}*/
 
 void conv_int_to_float_stack()
 {
@@ -272,7 +252,6 @@ void generate_muls()
 
 void generate_divs()
 {
-	
 	printf("%s", "POPS GF@$variable1\n");
 	printf("%s", "JUMPIFNEQ _not_zero GF@$variable1 float@0x0p+0\n");
 	printf("%s", "EXIT int@9\n");
@@ -306,7 +285,7 @@ void generate_LTS()
 	printf("%s", "LTS\n");
 }
 
-void generate_LTEQ()
+/*void generate_LTEQ()
 {
 	printf("%s","POPS GF@$variable1\n");
 	printf("%s","POPS GF@$variable2\n");
@@ -330,23 +309,54 @@ void generate_GTEQ()
 	printf("%s","PUSHS GF@$variable1\n");
 	printf("EQS\n");
 	printf("ORS\n");
+}*/
+
+void generate_LTEQ()
+{
+	printf("GTS\n");
+	printf("NOTS\n");
 }
 
-void if_statement(char* function)
+void generate_GTEQ()
+{
+	printf("LTS\n");
+	printf("NOTS\n");
+}
+
+void generate_label(char* label)
+{
+	printf("%s", "LABEL _");
+	printf("%s", label);
+	printf("%s","\n");
+}
+
+void generate_jump_if_equals(char* label)
 {
 	printf("%s", "JUMPIFEQ _");
-	printf("%s", function);
-	printf("%s", "GF@$result GF@$comp_variable");
+	printf("%s", label);
+	printf("%s", "GF@$variable1 GF@$variable2");
 	printf("%s", "\n");
 }
 
-void if_else_statement(char* function)
+void generate_jump(char* label)
 {
 	printf("%s", "JUMP _");
-	printf("%s", function);
+	printf("%s", label);
 	printf("%s", "\n");
 }
 
+void generate_jump_if_equals_stack(char* label)
+{
+	printf("%s", "JUMPIFEQS _");
+	printf("%s", label);
+	printf("%s", "\n");
+}
+
+
+
+
+
+/*
 void while_statement(char* function)
 {
 	printf("%s", "JUMPIFEQ _");
@@ -355,9 +365,4 @@ void while_statement(char* function)
 	printf("%s", "\n");
 }
 
-void while_end_statement(char* function)
-{
-	printf("%s", "JUMP _");
-	printf("%s", function);
-	printf("%s", "\n");
-}
+*/

@@ -249,6 +249,7 @@ void process_node(tNodeData *item)
         // case TOKEN_STRING_LITERAL:
         case TOKEN_KEYWORD:
         case TOKEN_IDENTIFIER:
+        case UNDEFINED:
             // dosel uzel scitani
             if (strcmp(item->attribute->str, "+") == 0)
             {
@@ -282,12 +283,12 @@ void process_node(tNodeData *item)
             // dosel uzel "<="
             else if (strcmp(item->attribute->str, "<=") == 0)
             {
-                // generate_LTEQ();
+                generate_LTEQ();
             }
             // dosel uzel ">="
             else if (strcmp(item->attribute->str, ">=") == 0)
             {
-                // generate_GTEQ();
+                generate_GTEQ();
             }
             // dosel uzel "<"
             else if (strcmp(item->attribute->str, "<") == 0)
@@ -871,17 +872,9 @@ Prec_token process_terminal(tPrec_stack* prec_stack) //získáme index v řádku
         case TOKEN_DOUBLE:
         case TOKEN_STRING_LITERAL:
         case TOKEN_IDENTIFIER:
+        case TOKEN_KEYWORD:
             return PREC_VALUE;
 
-        case TOKEN_KEYWORD:
-            if(!strcmp(top_term->attribute->str, "None"))
-            {
-                return PREC_VALUE;
-            }
-            else
-            {
-                return PREC_OTHER;
-            }
 
         default:
             return PREC_OTHER;
@@ -1161,7 +1154,7 @@ bool process_expression(tParser_data* parser_data)
         if (process_prec_table(parser_data, &prec_stack, prec_term_type, prec_token_type))
         {
             term = tPrec_stack_top_term(&prec_stack); //top terminál
-            prec_term_type = process_terminal(&prec_stack); //znak na zásobnníku
+            prec_term_type = process_terminal(&prec_stack); //znak na zásobníku
             prec_token_type = process_token(parser_data); //znak na vstupu
         }
         else

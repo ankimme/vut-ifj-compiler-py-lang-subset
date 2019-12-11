@@ -67,7 +67,14 @@ int string_add_char(dynamic_string *s, char c);
  */
 int string_append(dynamic_string *s, char *string);
 
+/**
+ * todo
+ */
 void string_trim(dynamic_string **s);
 
+/**
+ * todo
+ */
+void string_append_int(dynamic_string *s, int a);
 
 #endif

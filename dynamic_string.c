@@ -196,6 +196,15 @@ void string_trim(dynamic_string **s)
 	// printf("KONTROLA : %s\n", (*s)->str);
 }
 
+
+void string_append_int(dynamic_string *s, int a)
+{
+	while(a)
+	{
+		string_add_char(s, (a % 10) + 48);
+		a /= 10;
+	}
+}
 // void string_insert_substring(dynamic_string *s, char *sub)
 // {
 

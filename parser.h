@@ -25,8 +25,12 @@ typedef struct
     tSymtable *symtable;
     tHash_Table_Item *table_l_value;
     tHash_Table_Item *table_r_value;
+    dynamic_string *label;
     int error_code;
     int fun_call_param_count; // pocet parametru u volane funkce
+    int if_statement_index;
+    int max_if_statement_index;
+    int while_statement_index;
     bool unget_token; // flag který vynutí načíst stejný token znova
     bool load_backup;
     bool function_definition_scope; // flag určuje zda se právě nacházíme v definici funkce

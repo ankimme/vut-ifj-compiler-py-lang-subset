@@ -166,9 +166,17 @@ bool init_parser_data(tParser_data *parser_data)
     data_ord->return_type = TYPE_INT;
     st_insert_entry_in_current_context(parser_data->symtable, entry_ord, data_ord, HT_TYPE_FUNCTION);
 
+    // inicializace pomocneho stringu pro generaci navesti
+    parser_data->label = malloc(sizeof(dynamic_string));
+    string_init(parser_data->label);
 
     // inicializace pomocne promenne pro uchovani poctu parametru u volane funkce
     parser_data->fun_call_param_count = 0;
+
+    // inicializace pomocnych promennych pro generovani unikatnich navesti
+    parser_data->if_statement_index = 0;
+    parser_data->max_if_statement_index = 0;
+    parser_data->while_statement_index = 0;
 
     // inicializace error kodu
     parser_data->error_code = 0;
@@ -206,6 +214,11 @@ void free_parser_data(tParser_data *parser_data)
     // uvolneni zasobniku
     free(parser_data->scanner_stack);
     parser_data->scanner_stack = NULL;
+
+    // uvolneni pomocneho stringu pro generovani labelu
+    string_free(parser_data->label);
+    free(parser_data->label);
+    parser_data->label = NULL;
 
     // uvolneni tabulky symbolu
     st_clean_all(parser_data->symtable);
@@ -650,6 +663,9 @@ bool sequence(tParser_data *parser_data)
         // token je "if" -> pravidlo 10
         if (strcmp(parser_data->current_token->attribute->str, "if") == 0)
         {
+            parser_data->max_if_statement_index++;
+            parser_data->if_statement_index = parser_data->max_if_statement_index;
+
             // musi nasledovat expression
             get_token_and_set_error_code(parser_data);
             if (!process_expression(parser_data))
@@ -682,6 +698,16 @@ bool sequence(tParser_data *parser_data)
                 return false;
             }
 
+
+            // push false
+            generate_false_on_stack();
+
+            // generate "$elseINDEX"
+            string_clear(parser_data->label);
+            string_append(parser_data->label, "$else");
+            string_append_int(parser_data->label, parser_data->if_statement_index);
+            generate_jump_if_equals_stack(parser_data->label->str);
+
             // musi nasledovat neterminal STATEMENTS
             get_token_and_set_error_code(parser_data);
             if (!statements(parser_data))
@@ -694,6 +720,20 @@ bool sequence(tParser_data *parser_data)
             {
                 return false;
             }
+
+
+            // jump "$endINDEX"
+            string_clear(parser_data->label);
+            string_append(parser_data->label, "$end");
+            string_append_int(parser_data->label, parser_data->if_statement_index);
+            generate_jump(parser_data->label->str);
+
+
+            // generate "elseINDEX"
+            string_clear(parser_data->label);
+            string_append(parser_data->label, "$else");
+            string_append_int(parser_data->label, parser_data->if_statement_index);
+            generate_label(parser_data->label->str);
 
             // musi nasledovat "else"
             if (!get_compare_check(parser_data, TOKEN_KEYWORD))
@@ -743,6 +783,15 @@ bool sequence(tParser_data *parser_data)
             {
                 return false;
             }
+
+            // generate "$endINDEX" label
+            string_clear(parser_data->label);
+            string_append(parser_data->label, "$end");
+            string_append_int(parser_data->label, parser_data->if_statement_index);
+            generate_label(parser_data->label->str);
+        
+            parser_data->if_statement_index--;
+        
         }
         // token je "while" -> pravidlo 11
         else if (strcmp(parser_data->current_token->attribute->str, "while") == 0)
@@ -938,6 +987,7 @@ bool sequence(tParser_data *parser_data)
                 return false;
             }            
         }
+        parser_data->table_l_value = NULL;
     }
     else
     {
@@ -961,6 +1011,7 @@ bool sequence(tParser_data *parser_data)
             set_error_code(parser_data, SYNTAX_ERROR);
             return false;
         }
+        parser_data->table_l_value = NULL;
     }
     /*
     // token je identifikator -> pravidlo 12

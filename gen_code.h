@@ -70,11 +70,11 @@
 	"LABEL _chr_cont_correct_type\n"\
 	"LT LF@isHigher LF@param1 LF@top\n"\
 	"JUMPIFEQ _chr_cont_if_lower LF@isHigher bool@true\n"\
-	"EXIT int@4\n"\
+	"EXIT int@6\n"\
 	"LABEL _chr_cont_if_lower\n"\
 	"GT LF@isLower LF@param1 LF@bottom\n"\
 	"JUMPIFEQ _chr_cont_if_higher LF@isLower bool@true\n"\
-	"EXIT int@4\n"\
+	"EXIT int@6\n"\
 	"LABEL _chr_cont_if_higher\n"\
 	"INT2CHAR LF@%return LF@param1\n"\
 	"POPFRAME\n"\
@@ -183,6 +183,8 @@ void generate_func_variables(char* name, char* value);
 
 void generate_label(char* label);
 
+void generate_false_on_stack();
+
 void conv_int_to_float(char* value_in_register);
 
 void conv_float_to_int(char* value_in_register);
@@ -219,12 +221,16 @@ void generate_GTS();
 
 void generate_LTS();
 
-void if_statement(char* function);
+void generate_LTEQ();
 
-void if_else_statement(char* function);
+void generate_GTEQ();
+
+void generate_jump_if_equals(char* label);
+
+void generate_jump(char* label);
+
+void generate_jump_if_equals_stack(char* label);
 
 void while_statement(char* function);
-
-void while_end_statement(char* function);
 
 #endif
