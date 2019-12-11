@@ -24,7 +24,7 @@ valgrind: $(PROJECT)
 gencode: $(PROJECT)
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./$(PROJECT) < $(TEST_FOLDER)/test_input_1.py > ifj19code.txt
 	@echo "\033[36m"
-	cat ifj19code.txt
+	# cat ifj19code.txt
 	@echo "\033[92m"
 	./ic19int ifj19code.txt
 	@echo "\033[0m"

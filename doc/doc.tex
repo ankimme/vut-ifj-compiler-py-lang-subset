@@ -1,28 +1,87 @@
-\documentclass[10pt, a4paper]{article}
+\documentclass[12pt, a4paper]{article}
 
 \usepackage[left=1.5cm, top=2cm, text={18cm, 24cm}]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[czech]{babel}
 \usepackage[utf8]{inputenc}
-\usepackage{hyperref}
-\usepackage{titlesec}
-
+\usepackage{ragged2e}
 
 \begin{document}
 
-% \textsc{Fakulta informačních technologií\\Vysoké učení technické v Brně}
 \begin{center}
     \thispagestyle{empty}
     \Huge
     \textsc{Fakulta informačních technologií\\Vysoké učení technické v Brně}\\
     \vspace{\stretch{0.382}}
-    \LARGE{Formální jazyky a překladače\,--\,projekt\\
-    Sazba dokumentů a matematických výrazů}
+    \medskip
+    \LARGE{Formální jazyky a překladače \\}
+    \Large{ Dokumentace projektu \\ Tým 028 -- varianta II \\}
+    \bigskip
+    \large{Jan Klhůfek -- vedoucí (xklhuf01, 34\%) \\ Andrea Chimenti (xchime00, 33\%) \\ Martin Šerý (xserym01, 33\%) \\ Matej Alexej Helc (xhelcm00, 0\%)}
     \vspace{\stretch{0.618}}
 \end{center}
-{\Large 2019 \hfill Andrea Chimenti (xchime00), Jan Klhůfek (xklhuf01), Martin Šerý (xserym01)}
+{\large 11. prosince 2019 \hfill }
+
+\newpage
 
 \section{Úvod}
-NIC
+\justifying
+Naším úkolem bylo vytvořit překladač pro jazyk IFJ19. Úkolem překladače je načíst vstup ze standardního vstupu a na standardní výstup vytisknout kód v jazyce IFJcode19. Jazyk IFJ19 je podmnožinou jazyka Python, jazyk IFJcode19 je jazyk který připomíná assembler, ale zjednodušuje mnoho úkonů.
+
+\section{Lexikální analýza}
+\justifying
+Lexikální analýzu jsme založili na deterministickém konečném automatu (DKA) doplněném o pomocný zásobník. O zpracování většiny příchozích lexému ze standardního vstupu se stará samotný automat, kde jsou jednotlivé stavy reprezentovány prvky v poli enum. Speciálně je pak přistupováno ke generování tokenů INDENTU a DEDENTU, které se pro lepší přehlednost zpracovávají mimo automat.\\
+Implementace automatu je pak založena na switchi stavů automatu, který postupně načítá znaky ze vstupu a v závislosti na typu znaku se rozhodne, do jakého stavu přejít. Následně načítá další znaky dokud nedojde do koncového stavu a tím vygeneruje příslušný token předávaný do parseru. \\
+Tokeny INDENT a DEDENT se mohou vyskytovat poute na začátku řádku a tak se zpracovávají samostatně mimo automat. Tím jsme minimalizovali riziko vzniku nesprávného zacházení s mezerami uvnitř automatu a zpřehlednili tím i samotný automat. \\
+V případě, že do nekoncového stavu přijde neočekávaný znak, lexikální analýza je neúspěšná. Z lexikálního analyzátoru se do parseru ve struktuře předává načtený token spolu s návratovou hodnotou značící úspěch, potažmo neúspěch lexikální analýzy. \\
+
+\section{Syntaktická analýza}
+\justifying
+
+\subsection{Analýza shora dolů}
+\justifying
+Pro syntaktickou analýzu shora dolů jsme zvolili rekurzivní sestup založený na LL gramatice a LL tabulce. Pro každé pravidlo v LL gramatice je vytvořená funkce, která simuluje rozderivování daného pravidla voláním jiných takovýchto funkcí. Pro spuštění syntaktické analýzy se spustí funkce \texttt{prog}, která reprezentuje počáteční neterminál. Veškerá data jsou předávana přes stukturu \texttt{tParser\_data}, která obsahuje odkaz na tabulku symbolů, zásobník, informace o tokenech, různé flagy a jiné pomocné struktury. Alokace těchto dat se vykoná vždy před samotným spuštěním analýzy a dealokace je provedena vždy před ukončením programu. Nemělo by tedy hrozit, že by program obsahoval úniky paměti (pokud nedojde k chybě typu \texttt{segmentation fault}, kterou se nám v žádných z našich testů nepodařilo vyvolat).
+
+\subsection{Analýza zdola nahoru}
+\justifying
+Zpracování výrazů je založeno na precedenční tabulce a zásobníku symbolů. V kodu je tabulka reprezentována 2D polem znaků, kde indexy řádků značí symbol na zásobníku a indexy sloupců načtený token ze vstupu. Znak na průniku indexů v tabulce určuje prioritu symbolu na zásobníku vůči načtenému tokenu. \\
+Postupně se vždy nejprve zjistí aktuální symbol na vrcholu zásobníku a načtený token ze vstupu a podle tabulky se provede zpracování. Buď se token vloží na zásobník, generuje se handle pro budoucí derivaci některého pravidla nebo se provede samotná derivace pravidla. \\
+V rámci derivace se taktéž provádí sémantické kontroly pro přetypování, běhové chyby a volá se generování cílového kodu. Při syntaktické analýze výrazů se zároveň pro každý neterminál vytvoří uzel do dílčí tabulky symbolů, používané pouze pro právě zpracovávaný výraz, a na konci syntaktické analýzy se průchodem vytvořeného abstraktního syntaktického stromu generuje postfix tvar výrazu, který se posílá generátoru pro zpracování. \\
+Snahou bylo odhalit co nejvíce možných chyb a neplatných konstrukcí již během překladu, abychom si tak ulehčili práci s generováním kodu.
+
+\section{Sémantická analýza}
+\justifying
+Sémantická analýza 
+
+\section{Generování cílového kódu}
+\justifying
+Generace kódu probíhá způsobem, že 
+
+\section{Tabulka symbolů}
+\justifying
+
+
+\section{Práce v týmu}
+\justifying
+
+
+\subsection{Komunikace}
+\justifying
+Komunikace probíhala hlavně verbálně a to buď osobně, nebo prostřednictvím hovorů přes Skype. Během semestru jsme pořádali schůzky, kterých se účastnili všichni aktivní členové týmu. Na schůzkách byla vždy rozdělena práce a zadány nové úkoly.
+
+\subsection{Verzovací systém a použité nástroje}
+\justifying
+Pro verzování a zálohování kódu byla zvolen git s hostingem na GitLab. Pro každý logický celek byla vytvořena vlastní větev, po dokonční práce se změny spojovaly do větve 
+
+\subsection{Rozdělení práce}
+\justifying
+
+\begin{itemize}
+    \item \textbf{Jan Klhůfek:} lexikální analýza, precedenční analýza, sémantická analýza, vedení týmu.
+    \item \textbf{Andrea Chimenti:} syntaktická analýza shora dolů, sémantická analýza.
+    \item \textbf{Martin Šerý:} generování cílového kódu, dokumentace, testování.
+    \item \textbf{Matej Alexej Helc:} člen se na vývoji nepodílel a tým opustil.
+\end{itemize}
+
 
 \end{document}

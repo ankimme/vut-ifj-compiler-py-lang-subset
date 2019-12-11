@@ -17,16 +17,15 @@ int main()
     dynamic_string *string = malloc(sizeof(dynamic_string));
     string->str = NULL;
 
-    char one[] = "5555555555555555555555555555555555";
-    char two[] = "two";
-    char three[] = "three";
+    // char one[] = "one";
+    // char two[] = "two";
+    // char three[] = "three";
 
     string_init(string);
 
-    string_append(string, two);
-    string_append(string, two);
-    string_append(string, one);
-    string_append(string, three);
+    // string_append(string, one);
+    // string_append(string, two);
+    // string_append(string, three);
     // string_append(string, three);
     // string_append(string, three);
     // string_append(string, three);
@@ -38,10 +37,13 @@ int main()
 
     // string_clear(string);
 
-    for (int i = 0; i < 2; i++)
-    {
-        string_add_char(string, 'a');
-    }
+    // for (int i = 0; i < 2; i++)
+    // {
+    //     string_add_char(string, 'a');
+    // }
+
+    // string_add_char(string, 'a');
+    string_append_int(string, 102390);
 
     printf("%s\n", string->str);
 
