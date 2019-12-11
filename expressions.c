@@ -246,7 +246,7 @@ void process_node(tNodeData *item)
     {
         case TOKEN_INTEGER:
         case TOKEN_DOUBLE:
-        case TOKEN_STRING_LITERAL:
+        // case TOKEN_STRING_LITERAL:
         case TOKEN_KEYWORD:
         case TOKEN_IDENTIFIER:
             // dosel uzel scitani
@@ -322,7 +322,23 @@ void process_node(tNodeData *item)
                 conv_int_to_float_stack();
             }
             break;
-            
+        case TOKEN_STRING_LITERAL:
+            // dosel uzel scitani
+            if (strcmp(item->attribute->str, "+") == 0)
+            {
+                generate_concat();
+            }
+            // prvni znak je a-zA-Z_ -> jedna se o identifikator
+            else if ((item->attribute->str[0] >= 65 && item->attribute->str[0] <= 90) || (item->attribute->str[0] >= 97 && item->attribute->str[0] <= 122) || (item->attribute->str[0] == '_'))
+            {
+                generate_pushs(item->attribute->str, TOKEN_IDENTIFIER);
+            }
+            else
+            {
+                string_trim(&(item->attribute));
+                generate_pushs(item->attribute->str, TOKEN_STRING_LITERAL);
+            }
+            break;
         default:
             break;
     }

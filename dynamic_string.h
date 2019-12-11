@@ -13,6 +13,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <ctype.h>
 
 #define CHUNK_SIZE 32
 
@@ -64,5 +66,8 @@ int string_add_char(dynamic_string *s, char c);
  * @return 1 ak sa zreťazenie podarilo, 0 ak nie.
  */
 int string_append(dynamic_string *s, char *string);
+
+void string_trim(dynamic_string **s);
+
 
 #endif

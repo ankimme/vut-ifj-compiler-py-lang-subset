@@ -17,6 +17,11 @@
 #define HEADER \
 	".IFJcode19\n"\
 	"DEFVAR GF@return\n"\
+	"DEFVAR GF@$concat_result\n"\
+	"DEFVAR GF@$str1\n"\
+	"DEFVAR GF@$str2\n"\
+	"DEFVAR GF@$variable1\n"\
+	"DEFVAR GF@$variable2\n"\
 	"JUMP _main\n" \
 
 
@@ -51,12 +56,26 @@
 	"DEFVAR LF@param1\n"\
 	"DEFVAR LF@%return\n"\
 	"DEFVAR LF@exp_type\n"\
+	"DEFVAR LF@isHigher\n"\
+	"DEFVAR LF@isLower\n"\
+	"DEFVAR LF@top\n"\
+	"DEFVAR LF@bottom\n"\
 	"MOVE LF@param1 LF@%1\n"\
+	"MOVE LF@top int@256\n"\
+	"MOVE LF@bottom int@-1\n"\
 	"MOVE LF@exp_type string@int\n"\
 	"TYPE LF@type LF@param1\n"\
-	"JUMPIFEQ _chr_continue LF@type LF@exp_type\n"\
+	"JUMPIFEQ _chr_cont_correct_type LF@type LF@exp_type\n"\
 	"EXIT int@4\n"\
-	"LABEL _chr_continue\n"\
+	"LABEL _chr_cont_correct_type\n"\
+	"LT LF@isHigher LF@param1 LF@top\n"\
+	"JUMPIFEQ _chr_cont_if_lower LF@isHigher bool@true\n"\
+	"EXIT int@4\n"\
+	"LABEL _chr_cont_if_lower\n"\
+	"GT LF@isLower LF@param1 LF@bottom\n"\
+	"JUMPIFEQ _chr_cont_if_higher LF@isLower bool@true\n"\
+	"EXIT int@4\n"\
+	"LABEL _chr_cont_if_higher\n"\
 	"INT2CHAR LF@%return LF@param1\n"\
 	"POPFRAME\n"\
 	"RETURN\n"\
@@ -66,7 +85,14 @@
 	"PUSHFRAME\n" \
 	"DEFVAR LF@%return\n"\
 	"DEFVAR LF@param1\n"\
+	"DEFVAR LF@type\n"\
+	"DEFVAR LF@exp_type\n"\
 	"MOVE LF@param1 LF@%1\n"\
+	"MOVE LF@exp_type string@string\n"\
+	"TYPE LF@type LF@param1\n"\
+	"JUMPIFEQ _len_continue LF@type LF@exp_type\n"\
+	"EXIT int@4\n"\
+	"LABEL _len_continue\n"\
 	"STRLEN LF@%return LF@param1\n" \
 	"POPFRAME\n" \
 	"RETURN\n"\
@@ -74,30 +100,39 @@
 #define ORD \
 	"LABEL _ord\n"\
 	"PUSHFRAME\n"\
-	"DEFVAR LF@return\n"\
-	"TYPE GF@type LF@variable2\n"\
-	"JUMPIFEQ ord_continue LF@type int\n"\
-	"EXIT int@4\n"\
-	"LABEL _ord_continue\n"\
+	"DEFVAR LF@%return\n"\
+	"DEFVAR LF@param1\n"\
+	"DEFVAR LF@param2\n"\
+	"DEFVAR LF@type\n"\
 	"DEFVAR LF@length\n"\
+	"DEFVAR LF@isHigher\n"\
+	"DEFVAR LF@exp_type\n"\
+	"DEFVAR LF@isLower\n"\
+	"DEFVAR LF@top\n"\
+	"DEFVAR LF@bottom\n"\
+	"MOVE LF@param1 LF@%1\n"\
+	"MOVE LF@param2 LF@%2\n"\
+	"MOVE LF@bottom int@-1\n"\
+	"MOVE LF@exp_type string@int\n"\
+	"TYPE LF@type LF@param2\n"\
+	"JUMPIFEQ _ord_cont LF@type LF@exp_type\n"\
+	"EXIT int@4\n"\
+	"LABEL _ord_cont\n"\
 	"CREATEFRAME\n"\
-	"DEFVAR TF@variable1\n"\
-	"MOVE TF@variable1 LF@variable1\n"\
-	"CALL _length\n"\
-	"MOVE LF@length TF@return\n"\
-	"CLEARS\n"\
-	"PUSHS LF@variable2\n"\
-	"PUSHS LF@input\n"\
-	"LTS\n"\
-	"PUSHS LF@variable2\n"\
-	"PUSHS LF@length\n"\
-	"LTS\n"\
-	"NOTS\n"\
-	"ORS\n"\
-	"POPS TF@return\n"\
-	"JUMPIFEQ _ord_end TF@return bool@true\n"\
-	"STRI2INT LF@$return LF@variable1 LF@variable2\n"\
+	"DEFVAR TF@%1\n"\
+	"MOVE TF@%1 LF@param1\n"\
+	"CALL _len\n"\
+	"MOVE LF@length TF@%return\n"\
+	"MOVE LF@top LF@length\n"\
+	"GT LF@isLower LF@param2 LF@bottom\n"\
+	"JUMPIFNEQ _ord_end LF@isLower bool@true\n"\
+	"LT LF@isHigher LF@param2 LF@top\n"\
+	"JUMPIFNEQ _ord_end LF@isHigher bool@true\n"\
+	"STRI2INT LF@%return LF@param1 LF@param2\n"\
+	"POPFRAME\n"\
+	"RETURN\n"\
 	"LABEL _ord_end\n"\
+	"MOVE LF@%return nil@nil\n"\
 	"POPFRAME\n"\
 	"RETURN\n"\
 
@@ -110,6 +145,7 @@
 	"DEFVAR LF@param1\n"\
 	"MOVE LF@param1 LF@%1\n"\
 	"WRITE LF@param1\n" \
+	"WRITE string@\\010\n" \
 	"POPFRAME\n" \
 	"RETURN\n" \
 

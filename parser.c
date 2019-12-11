@@ -156,6 +156,17 @@ bool init_parser_data(tParser_data *parser_data)
     st_insert_entry_in_current_context(parser_data->symtable, entry_chr, data_chr, HT_TYPE_FUNCTION);
 
 
+    // vlozeni ord entry do tabulky symbolu
+    tKey entry_ord = malloc(sizeof(dynamic_string));
+    string_init(entry_ord);
+    string_append(entry_ord, "ord");
+    tFunctionData *data_ord = malloc(sizeof(tFunctionData));
+    // todo
+    data_ord->params_count = 2;
+    data_ord->return_type = TYPE_INT;
+    st_insert_entry_in_current_context(parser_data->symtable, entry_ord, data_ord, HT_TYPE_FUNCTION);
+
+
     // inicializace pomocne promenne pro uchovani poctu parametru u volane funkce
     parser_data->fun_call_param_count = 0;
 
@@ -1469,6 +1480,12 @@ bool term(tParser_data *parser_data)
         // pocitadlo++
         parser_data->fun_call_param_count++;
         // defvar, move
+
+        if (parser_data->current_token->type == TOKEN_STRING_LITERAL)
+        {
+            string_trim(&(parser_data->current_token->attribute));
+        }
+
         generate_pass_arg_to_func(parser_data->current_token->attribute->str, parser_data->current_token->type, parser_data->fun_call_param_count);
 
         // musi nasledovat neterminal TERM_N
@@ -1598,6 +1615,12 @@ bool term_n_value(tParser_data *parser_data)
 
         // pocitadlo++
         parser_data->fun_call_param_count++;
+
+        if (parser_data->current_token->type == TOKEN_STRING_LITERAL)
+        {
+            string_trim(&(parser_data->current_token->attribute));
+        }
+
         // defvar, move
         generate_pass_arg_to_func(parser_data->current_token->attribute->str, parser_data->current_token->type, parser_data->fun_call_param_count);
 

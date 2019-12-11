@@ -105,3 +105,98 @@ int string_append(dynamic_string *s, char *string)
 	return 1;
 }
 
+void string_trim(dynamic_string **s)
+{
+	if ((*s)->str[0] != '\'')
+	{
+		return;
+	}
+
+	// odstraneni prvniho a posledniho znaku
+	(*s)->length--;
+	(*s)->str[(*s)->length] = '\0';
+	memmove((*s)->str, (*s)->str + 1, strlen((*s)->str));
+
+	dynamic_string *new_string = malloc(sizeof(dynamic_string));
+	string_init(new_string);
+	char c = (*s)->str[0];
+	char escape[5];
+
+	for (int i = 0; c != '\0'; i++)
+	{
+		// tabulator
+		if (c == '\\' && (*s)->str[i + 1] == 't')
+		{
+			string_append(new_string, "\\009");
+			i++;
+		}
+		// newline
+		else if (c == '\\' && (*s)->str[i + 1] == 'n')
+		{
+			string_append(new_string, "\\010");
+			i++;
+		}
+		// dvojta uvozovka
+		else if (c == '\\' && (*s)->str[i + 1] == '"')
+		{
+			string_append(new_string, "\\034");
+			i++;
+		}
+		// jednotna uvozovka
+		else if (c == '\\' && (*s)->str[i + 1] == '\'')
+		{
+			string_append(new_string, "\\039");
+			i++;
+		}
+		// lomitko zpetne
+		else if (c == '\\' && (*s)->str[i + 1] == '\\')
+		{
+			string_append(new_string, "\\092");
+			i++;
+		}
+		// hexa hodnota
+		else if (c == '\\' && (*s)->str[i + 1] == 'x' && isxdigit((*s)->str[i + 2]) && isxdigit((*s)->str[i + 3]))
+		{
+			// string_append(new_string, "\\x"); delete
+			c = 0;
+			char hex_value[] = "00";
+			hex_value[0] = (*s)->str[i + 2];
+			hex_value[1] = (*s)->str[i + 3];
+			long b = strtol(hex_value, NULL, 16);
+			if (b > 127)
+			{
+				c = 32;
+			}
+			else
+			{
+				c = b;
+			}
+			
+			// c += 16*(*s)->str[i + 2]; delete
+			// c += (*s)->str[i + 3];
+			i += 2;
+			continue;
+		}
+		// ostatni znaky ktere vyzaduji escape sekvenci
+		else if (c <= 32 || c == 35 || c == 92)
+		{
+			sprintf(escape, "\\0%d", c);
+			string_append(new_string, escape);
+		}
+		else
+		{
+			string_add_char(new_string, c);
+		}
+		c = (*s)->str[i + 1];
+	}
+
+	string_free(*s);
+	free(*s);
+	*s = new_string;
+	// printf("KONTROLA : %s\n", (*s)->str);
+}
+
+// void string_insert_substring(dynamic_string *s, char *sub)
+// {
+
+// }

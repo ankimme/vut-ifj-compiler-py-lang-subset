@@ -18,7 +18,7 @@ void generate_build_in_functions()
 	printf("%s", CHR);
 	printf("%s", LEN);
 	printf("%s", PRINT);
-//  printf("%s", ORD);
+	printf("%s", ORD);
 //	printf("%s", SUBSTRING);
 }
 
@@ -74,7 +74,7 @@ void generate_function_start(char* function_name)
 	printf("%s", "LABEL _");
 	printf("%s", function_name);
 	printf("%s", "\n");
-	printf("%s", "PUSHFRAME");
+	printf("%s", "PUSHFRAME\n");
 }
 
 void generate_function_end(char* function_name)
@@ -177,6 +177,7 @@ void generate_label(char* label)
 {
 	printf("%s", "LABEL _");
 	printf("%s", label);
+	printf("%s","\n");
 }
 
 void conv_int_to_float(char* value_in_register)
@@ -209,10 +210,10 @@ void conv_float_to_int_stack()
 
 void generate_concat()
 {
-	printf("%s", "POPS GF@variable1");
-	printf("%s", "POPS GF@variable2");
-	printf("%s", "CONCAT GF@result GF@variable2 GF@variable1");
-	printf("%s", "PUSHS GF@result");
+	printf("%s", "POPS GF@$str1\n");
+	printf("%s", "POPS GF@$str2\n");
+	printf("%s", "CONCAT GF@$concat_result GF@$str2 GF@$str1\n");
+	printf("%s", "PUSHS GF@$concat_result\n");
 }
 
 void generate_pushs(char* variable, Token_type type)
@@ -251,7 +252,7 @@ void generate_pushs(char* variable, Token_type type)
 
 void generate_pops()
 {
-	printf("%s", "POPS  GF@return");
+	printf("%s", "POPS  GF@return\n");
 }
 
 void generate_adds()
@@ -271,17 +272,23 @@ void generate_muls()
 
 void generate_divs()
 {
+	
+	printf("%s", "POPS GF@$variable1\n");
+	printf("%s", "JUMPIFNEQ _not_zero GF@$variable1 float@0x0p+0\n");
+	printf("%s", "EXIT int@9\n");
+	printf("%s", "LABEL _not_zero\n");
+	printf("%s", "PUSHS GF@$variable1\n");
 	printf("%s", "DIVS\n");
 }
 
 void generate_idivs()
 {
-	printf("%s", "POPS GF@variable1"); // todo
-	printf("%s", "INT2FLOATS");
-	printf("%s", "PUSHS GF@variable2");
-	printf("%s", "INT2FLOATS");
-	printf("%s", "DIVS");
-	printf("%s", "FLOAT2INTS");
+	printf("%s", "POPS GF@$variable1\n");
+	printf("%s", "JUMPIFNEQ _not_zero GF@$variable1 int@0\n");
+	printf("%s", "EXIT int@9\n");
+	printf("%s", "LABEL _not_zero\n");
+	printf("%s", "PUSHS GF@$variable1\n");
+	printf("%s", "IDIVS\n");
 }
 
 void generate_EQS()
@@ -301,35 +308,35 @@ void generate_LTS()
 
 void generate_LTEQ()
 {
-	printf("%s","POPS GF@variable1\n");
-	printf("%s","POPS GF@variable2\n");
-	printf("%s","PUSHS GF@variable2\n");
-	printf("%s","PUSHS GF@variable1\n");
-	printf("LTS");
-	printf("%s","PUSHS GF@variable1\n");
-	printf("%s","PUSHS GF@variable2\n");
-	printf("EQS");
-	printf("ORS");
+	printf("%s","POPS GF@$variable1\n");
+	printf("%s","POPS GF@$variable2\n");
+	printf("%s","PUSHS GF@$variable2\n");
+	printf("%s","PUSHS GF@$variable1\n");
+	printf("LTS\n");
+	printf("%s","PUSHS GF@$variable1\n");
+	printf("%s","PUSHS GF@$variable2\n");
+	printf("EQS\n");
+	printf("ORS\n");
 }
 
 void generate_GTEQ()
 {
-	printf("%s","POPS GF@variable1\n");
-	printf("%s","POPS GF@variable2\n");
-	printf("%s","PUSHS GF@variable2\n");
-	printf("%s","PUSHS GF@variable1\n");
-	printf("GTS");
-	printf("%s","PUSHS GF@variable2\n");
-	printf("%s","PUSHS GF@variable1\n");
-	printf("EQS");
-	printf("ORS");
+	printf("%s","POPS GF@$variable1\n");
+	printf("%s","POPS GF@$variable2\n");
+	printf("%s","PUSHS GF@$variable2\n");
+	printf("%s","PUSHS GF@$variable1\n");
+	printf("GTS\n");
+	printf("%s","PUSHS GF@$variable2\n");
+	printf("%s","PUSHS GF@$variable1\n");
+	printf("EQS\n");
+	printf("ORS\n");
 }
 
 void if_statement(char* function)
 {
 	printf("%s", "JUMPIFEQ _");
 	printf("%s", function);
-	printf("%s", "GF@result GF@comp_variable");
+	printf("%s", "GF@$result GF@$comp_variable");
 	printf("%s", "\n");
 }
 
@@ -344,7 +351,7 @@ void while_statement(char* function)
 {
 	printf("%s", "JUMPIFEQ _");
 	printf("%s", function);
-	printf("%s", "GF@result GF@comp_variable");
+	printf("%s", "GF@$result GF@$comp_variable");
 	printf("%s", "\n");
 }
 
