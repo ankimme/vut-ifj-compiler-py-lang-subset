@@ -157,7 +157,6 @@ void string_trim(dynamic_string **s)
 		// hexa hodnota
 		else if (c == '\\' && (*s)->str[i + 1] == 'x' && isxdigit((*s)->str[i + 2]) && isxdigit((*s)->str[i + 3]))
 		{
-			// string_append(new_string, "\\x"); delete
 			c = 0;
 			char hex_value[] = "00";
 			hex_value[0] = (*s)->str[i + 2];
@@ -172,8 +171,6 @@ void string_trim(dynamic_string **s)
 				c = b;
 			}
 			
-			// c += 16*(*s)->str[i + 2]; delete
-			// c += (*s)->str[i + 3];
 			i += 2;
 			continue;
 		}
@@ -193,7 +190,6 @@ void string_trim(dynamic_string **s)
 	string_free(*s);
 	free(*s);
 	*s = new_string;
-	// printf("KONTROLA : %s\n", (*s)->str);
 }
 
 
@@ -205,7 +201,3 @@ void string_append_int(dynamic_string *s, int a)
 		a /= 10;
 	}
 }
-// void string_insert_substring(dynamic_string *s, char *sub)
-// {
-
-// }
