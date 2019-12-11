@@ -27,7 +27,6 @@
  * Stavy psané velkými písmeny značí koncový stav, jiné mezistav
  *
  */
-
 typedef enum 
 {
     start, //počáteční stav automatu
@@ -64,7 +63,6 @@ typedef enum
     exclamation_mark, //mezistav, vykřičník
     RELATION_OPERATOR,  //koncové stavy, typ konkrétního relačního operátoru (<,>,=)
                         //případně dalších při načtení následného znaku (<=,>=,==,!=)
-    
 
     /*  BINÁRNÍ OPERÁTOR  */
     BINARY_OPERATOR, //koncový stavy, zpracování různých typů binárních operátorů
@@ -88,7 +86,6 @@ typedef enum
  * Jednotlivé typy tokenů z lexikální analýzy.
  *
  */
-
 typedef enum 
 {
     TOKEN_INDENT, // 0
@@ -138,7 +135,6 @@ typedef enum
  * @brief Definování tokenu.
  *
  */
-
 typedef struct Token
 {
     Token_type type;
@@ -154,7 +150,6 @@ typedef struct Token
  * @post Token je naplněn hodnotami pro další vyhodnocení a zpracování.
  *
  */
-
 void get_next_token(St_token* token, tStack* stack);
 
 /**
@@ -165,7 +160,6 @@ void get_next_token(St_token* token, tStack* stack);
  * @return Návratová hodnota lexikální analýzy.
  *
  */
-
 int clean_all(Errors err, dynamic_string *str);
 
 /**
@@ -175,31 +169,6 @@ int clean_all(Errors err, dynamic_string *str);
  * @return Zda se jedná o klíčové slovo
  *
  */
-
 int is_keyword(dynamic_string *string);
-
-
-
-/**
- * Převod řetězce na celočíselný literál.
- *
- * @param str Řetězec pro převod
- * @param token Token pro uložení hodnoty převedeného celočíselného literálu
- * @post Token je naplněn hodnotami pro další vyhodnocení a zpracování.
- *
- */
-
-//void convert_to_integer(dynamic_string *str, St_token *token);
-
-/**
- * Převod řetězce na desetinný literál.
- *
- * @param str Řetězec pro převod
- * @param token Token pro uložení hodnoty převedeného desetinného literálu
- * @post Token je naplněn hodnotami pro další vyhodnocení a zpracování.
- *
- */
-
-//void convert_to_double(dynamic_string *str, St_token *token);
 
 #endif

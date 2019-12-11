@@ -31,46 +31,6 @@ int is_keyword(dynamic_string *string)
     }
 }
 
-/*
-void convert_to_integer(dynamic_string *str, St_token *token)
-{
-    errno = 0;
-    char *end_pointer;
-
-    long integer_num = strtol(str->str, &end_pointer, 10); //konverze číselné hodnoty z řetězce do proměnné typu double
-
-    if ((integer_num > INT_MAX) || (*end_pointer != '\0'))
-    {
-        errno = ERANGE;
-        token->error_value = clean_all(INTERNAL_ERROR, str);
-        return;
-    }
-
-   
-    token->attribute = string;
-    token->error_value = clean_all(NO_ERROR, str);
-    return;
-}
-
-
-void convert_to_double(dynamic_string *str, St_token *token)
-{
-    errno = 0;
-    char *end_pointer;
-
-    double decimal_num = strtod(str->str, &end_pointer); //konverze číselné hodnoty z řetězce do proměnné typu double
-    
-    if (errno == ERANGE)
-    {
-        token->error_value = clean_all(INTERNAL_ERROR, str);
-        return;
-    }
-
-    token->attribute.decimal = decimal_num;
-    token->error_value = clean_all(NO_ERROR, str);
-    return;
-}
-*/
 
 void get_next_token(St_token *token, tStack* stack)
 {
@@ -79,8 +39,6 @@ void get_next_token(St_token *token, tStack* stack)
     char c = getchar();
 
     //vytvoření stringu pro aktuální stav automatu
-    
-
     dynamic_string *string = malloc(sizeof(dynamic_string));
     if (!string_init(string))
     {
@@ -104,11 +62,6 @@ void get_next_token(St_token *token, tStack* stack)
             c = getchar();
         }
     
-        // if ((counter > 0) && (c == '\"')) //nemůže přijít dokumentační řetězec, chyba
-        // {
-        //     token->error_value = clean_all(LEXICAL_ERROR, string);
-        //     return;
-        // } DELETE
 
         if (counter >= 0) //generuj token INDENT či DEDENT
         {
@@ -116,10 +69,7 @@ void get_next_token(St_token *token, tStack* stack)
             tStack_top (stack, &indentation);
 
             if (c == '#') {} //komentář, indent se negeneruje
-            // {
-                // continue; DELETE
-                // ungetc(c,stdin);
-            // }
+            
             else if ((c == '\"') && (indentation == counter))
             {
                 new_line = 1;
@@ -129,11 +79,7 @@ void get_next_token(St_token *token, tStack* stack)
                 new_line = 1;
             }
             else if (c == '\"') {}
-            else if (c == '\n') //EOL, indent se negeneruje
-            {
-                // continue;
-                // ungetc(c,stdin);   DELETE
-            }
+            else if (c == '\n') {} //EOL, indent se negeneruje
             else if ((c == EOF) && (indentation != 0)) //dogenerování dedentů
             {
                 new_line = 1;
