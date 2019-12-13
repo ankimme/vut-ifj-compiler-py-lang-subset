@@ -6,3 +6,5 @@
 * Martin Šerý (xserym01@stud.fit.vutbr.cz)
 
 Zadání [zde](ifj2019.pdf)
+
+Celkový počet řádků: 6720
