@@ -1,4 +1,5 @@
 .vscode/
+html/
 ifj19
 test.py
 symtable_test
