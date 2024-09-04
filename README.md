@@ -16,7 +16,7 @@ The aim of this project was to design and implement a compiler of a subset of th
 - **doc/dokumentace.pdf:** Documentation (CZ).
 
 ### Other team members
-[Jan Klhůfek](https://github.com/honzastor)
+[Jan Klhůfek](https://github.com/honzastor)  
 Martin Šerý
 
 ### Lines of code
