@@ -11,7 +11,7 @@ The aim of this project was to design and implement a compiler of a subset of th
 3. **expressions.c:** Semantic analysis. Evaluate expressions 
 4. **gen_code.c:** Generate code for the interpreter.
 
-### Other
+### Other files
 - **ifj2019.pdf:**  Project assignment (CZ).
 - **doc/dokumentace.pdf:** Documentation (CZ).
 
